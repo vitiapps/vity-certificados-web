@@ -6,7 +6,6 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { User } from 'lucide-react';
 
 interface CedulaFormProps {
   onCedulaValidated: (cedula: string, employeeData: any) => void;
@@ -22,7 +21,7 @@ const CedulaForm: React.FC<CedulaFormProps> = ({ onCedulaValidated }) => {
     
     if (!cedula.trim()) {
       toast({
-        title: "¡Ups! 😅",
+        title: "Error",
         description: "Por favor ingresa tu número de cédula",
         variant: "destructive"
       });
@@ -32,6 +31,7 @@ const CedulaForm: React.FC<CedulaFormProps> = ({ onCedulaValidated }) => {
     setIsLoading(true);
 
     try {
+      // Buscar empleado en la base de datos de Supabase
       const { data: employee, error } = await supabase
         .from('empleados')
         .select('*')
@@ -41,7 +41,7 @@ const CedulaForm: React.FC<CedulaFormProps> = ({ onCedulaValidated }) => {
       if (error && error.code !== 'PGRST116') {
         console.error('Error searching employee:', error);
         toast({
-          title: "Error 🔧",
+          title: "Error",
           description: "Hubo un problema al buscar en la base de datos. Intenta nuevamente.",
           variant: "destructive"
         });
@@ -50,13 +50,13 @@ const CedulaForm: React.FC<CedulaFormProps> = ({ onCedulaValidated }) => {
 
       if (employee) {
         toast({
-          title: "¡Perfecto! 🎉",
+          title: "¡Empleado encontrado!",
           description: `Hola ${employee.nombre}, se enviará un código de verificación a tu correo.`,
         });
         onCedulaValidated(cedula, employee);
       } else {
         toast({
-          title: "No encontrado 🔍",
+          title: "Empleado no encontrado",
           description: "El número de cédula no está registrado en nuestro sistema.",
           variant: "destructive"
         });
@@ -64,7 +64,7 @@ const CedulaForm: React.FC<CedulaFormProps> = ({ onCedulaValidated }) => {
     } catch (error) {
       console.error('Unexpected error:', error);
       toast({
-        title: "Error inesperado 😔",
+        title: "Error",
         description: "Hubo un error inesperado. Intenta nuevamente.",
         variant: "destructive"
       });
@@ -75,25 +75,20 @@ const CedulaForm: React.FC<CedulaFormProps> = ({ onCedulaValidated }) => {
 
   return (
     <div className="w-full max-w-md mx-auto animate-fade-in">
-      <Card className="border-0 shadow-2xl bg-white/90 backdrop-blur-xl rounded-3xl overflow-hidden">
-        <CardHeader className="text-center pb-6 bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-          <div className="flex justify-center mb-4">
-            <div className="bg-white/20 p-4 rounded-full">
-              <User className="h-8 w-8" />
-            </div>
-          </div>
-          <CardTitle className="text-2xl font-bold">
-            ¡Bienvenido! 👋
+      <Card className="border-0 shadow-xl bg-white/95 backdrop-blur-sm">
+        <CardHeader className="text-center pb-6">
+          <CardTitle className="text-2xl font-bold text-gray-800">
+            Ingresa tu Cédula
           </CardTitle>
-          <p className="mt-2 text-white/90">
-            Ingresa tu cédula para comenzar
+          <p className="text-gray-600 mt-2">
+            Para generar tu certificación laboral
           </p>
         </CardHeader>
-        <CardContent className="p-8">
+        <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-3">
-              <Label htmlFor="cedula" className="text-gray-700 font-semibold text-lg">
-                Número de Cédula 🆔
+            <div className="space-y-2">
+              <Label htmlFor="cedula" className="text-gray-700 font-medium">
+                Número de Cédula
               </Label>
               <Input
                 id="cedula"
@@ -101,26 +96,31 @@ const CedulaForm: React.FC<CedulaFormProps> = ({ onCedulaValidated }) => {
                 placeholder="Ej: 1024532077"
                 value={cedula}
                 onChange={(e) => setCedula(e.target.value)}
-                className="h-14 text-lg border-2 border-purple-200 focus:border-purple-500 focus:ring-purple-500/20 rounded-xl bg-gray-50/50"
+                className="h-12 text-lg border-2 border-gray-200 focus:border-vity-green focus:ring-vity-green/20"
                 disabled={isLoading}
               />
             </div>
             
             <Button 
               type="submit" 
-              className="w-full h-14 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold text-lg rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg"
+              className="w-full h-12 bg-vity-green hover:bg-vity-green-dark text-white font-semibold text-lg transition-all duration-200 transform hover:scale-105"
               disabled={isLoading}
             >
-              {isLoading ? (
-                <span className="flex items-center">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                  Validando...
-                </span>
-              ) : (
-                '¡Continuar! 🚀'
-              )}
+              {isLoading ? 'Validando...' : 'Continuar'}
             </Button>
           </form>
+          
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+            <p className="text-sm text-blue-800 font-medium mb-2">
+              📋 Cédulas de prueba disponibles:
+            </p>
+            <ul className="text-xs text-blue-700 space-y-1">
+              <li>• <strong>1024532077</strong> - Lizeth Acevedo (Activo)</li>
+              <li>• <strong>1019133853</strong> - Diego Cruz (Activo)</li>
+              <li>• <strong>51992347</strong> - Carmen Salcedo (Activo)</li>
+              <li>• <strong>107008356</strong> - Andrés Rodríguez (Retirado)</li>
+            </ul>
+          </div>
         </CardContent>
       </Card>
     </div>

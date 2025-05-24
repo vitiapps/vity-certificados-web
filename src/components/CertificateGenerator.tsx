@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Download, CheckCircle, ArrowLeft, RotateCcw, Sparkles } from 'lucide-react';
+import { Download, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface CertificateGeneratorProps {
@@ -23,9 +24,9 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
   const { toast } = useToast();
 
   const certificateTypeNames = {
-    'empleado-activo': 'Empleado Activo ✅',
-    'empleado-retirado': 'Empleado Retirado 📅',
-    'historial-completo': 'Historial Completo 📋'
+    'empleado-activo': 'Empleado Activo',
+    'empleado-retirado': 'Empleado Retirado',
+    'historial-completo': 'Historial Completo'
   };
 
   const formatCurrency = (amount: number) => {
@@ -41,12 +42,14 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
   };
 
   useEffect(() => {
+    // Auto-generar el certificado al cargar el componente
     generateCertificate();
   }, []);
 
   const generateCertificate = async () => {
     setIsGenerating(true);
     
+    // Simular generación del certificado
     setTimeout(() => {
       setIsGenerating(false);
       setIsGenerated(true);
@@ -60,73 +63,24 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
       });
       
       toast({
-        title: "¡Certificado generado! 🎉",
+        title: "¡Certificado generado!",
         description: "Tu certificado está listo para descargar",
       });
     }, 2000);
   };
 
   const downloadCertificate = () => {
-    // Create a simple PDF-like content using HTML and download it
-    const certificateContent = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <title>Certificado Laboral - ${employeeData.nombre}</title>
-        <style>
-          body { font-family: Arial, sans-serif; padding: 40px; line-height: 1.6; }
-          .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px; }
-          .content { margin: 20px 0; }
-          .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #666; }
-          .logo { max-width: 150px; }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <h1>${employeeData.empresa.toUpperCase()}</h1>
-          <p>NIT: 900.123.456-7</p>
-          <p>Bogotá, Colombia</p>
-          <h2>CERTIFICACIÓN LABORAL</h2>
-          <p>Fecha de expedición: ${new Date().toLocaleDateString('es-ES')}</p>
-        </div>
-        
-        <div class="content">
-          <p><strong>Empleado:</strong> ${employeeData.nombre}</p>
-          <p><strong>Documento:</strong> ${employeeData.tipo_documento} ${employeeData.numero_documento}</p>
-          <p><strong>Cargo:</strong> ${employeeData.cargo}</p>
-          <p><strong>Empresa:</strong> ${employeeData.empresa}</p>
-          <p><strong>Salario:</strong> ${formatCurrency(employeeData.sueldo)}</p>
-          <p><strong>Fecha de ingreso:</strong> ${formatDate(employeeData.fecha_ingreso)}</p>
-          ${employeeData.fecha_retiro ? `<p><strong>Fecha de retiro:</strong> ${formatDate(employeeData.fecha_retiro)}</p>` : ''}
-          
-          <div style="margin: 30px 0; padding: 20px; background: #f5f5f5; border-radius: 8px;">
-            <p>${getCertificateContent()}</p>
-          </div>
-        </div>
-        
-        <div class="footer">
-          <p>Este certificado es válido con firma digital y código de verificación</p>
-          <p>Código: VTY-${employeeData.numero_documento}-${Date.now().toString().slice(-6)}</p>
-        </div>
-      </body>
-      </html>
-    `;
-
-    const blob = new Blob([certificateContent], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `certificado_${employeeData.numero_documento}_${Date.now()}.html`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-
+    // En una implementación real, aquí se generaría y descargaría el PDF
     toast({
-      title: "¡Descarga iniciada! 📥",
-      description: "Tu certificado se está descargando como archivo HTML",
+      title: "Descarga iniciada",
+      description: "Tu certificado se está descargando...",
     });
+    
+    // Simular descarga
+    const link = document.createElement('a');
+    link.href = '#'; // En la implementación real sería la URL del PDF generado
+    link.download = `certificado_${employeeData.numero_documento}_${Date.now()}.pdf`;
+    // link.click(); // Comentado para no activar descarga real en la demo
   };
 
   const getCertificateContent = () => {
@@ -151,138 +105,127 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
 
   return (
     <div className="w-full max-w-4xl mx-auto animate-fade-in space-y-6">
-      <Card className="border-0 shadow-2xl bg-white/90 backdrop-blur-xl rounded-3xl overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white pb-6">
-          <div className="flex items-center justify-center space-x-3 mb-4">
-            {isGenerated && <CheckCircle className="h-8 w-8" />}
-            <Sparkles className="h-8 w-8" />
-            <CardTitle className="text-3xl font-bold">
-              {isGenerating ? '🔄 Generando Certificado...' : '✨ Certificado Laboral Listo!'}
+      {/* Header del certificado */}
+      <Card className="border-0 shadow-xl bg-white/95 backdrop-blur-sm">
+        <CardHeader className="text-center pb-4">
+          <div className="flex items-center justify-center space-x-2 mb-2">
+            {isGenerated && <CheckCircle className="h-6 w-6 text-vity-green" />}
+            <CardTitle className="text-2xl font-bold text-gray-800">
+              {isGenerating ? 'Generando Certificado...' : 'Certificado Laboral'}
             </CardTitle>
           </div>
-          <div className="text-center">
-            <Badge className="bg-white/20 text-white text-lg px-4 py-2 font-bold">
-              {certificateTypeNames[certificateType as keyof typeof certificateTypeNames]}
-            </Badge>
-          </div>
+          <Badge className="bg-vity-green">
+            {certificateTypeNames[certificateType as keyof typeof certificateTypeNames]}
+          </Badge>
         </CardHeader>
       </Card>
 
-      <Card className="border-0 shadow-2xl bg-white backdrop-blur-xl rounded-3xl overflow-hidden">
+      {/* Vista previa del certificado */}
+      <Card className="border-0 shadow-xl bg-white backdrop-blur-sm">
         <CardContent className="p-8">
           {isGenerating ? (
-            <div className="text-center py-16">
-              <div className="relative">
-                <div className="animate-spin rounded-full h-20 w-20 border-b-4 border-gradient-to-r from-purple-500 to-pink-500 mx-auto mb-6"></div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Sparkles className="h-8 w-8 text-purple-500 animate-pulse" />
-                </div>
-              </div>
-              <p className="text-xl text-gray-600 font-semibold">✨ Creando tu certificado mágico...</p>
-              <p className="text-sm text-gray-500 mt-2">Esto solo tomará unos segundos</p>
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-vity-green mx-auto mb-4"></div>
+              <p className="text-gray-600">Generando tu certificado...</p>
             </div>
           ) : (
-            <div className="space-y-8">
-              {/* Certificate content with modern styling */}
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-100 p-8 rounded-3xl border-2 border-blue-200">
-                <div className="text-center border-b-2 border-blue-300 pb-6 mb-6">
-                  <div className="bg-white rounded-2xl p-4 inline-block mb-4 shadow-lg">
-                    <img 
-                      src="/lovable-uploads/09667bc0-9af8-468b-9c4c-d4844d158bc0.png" 
-                      alt="Vity Logo" 
-                      className="h-16 w-auto mx-auto"
-                    />
-                  </div>
-                  <h1 className="text-4xl font-bold text-blue-900 mb-2">{employeeData.empresa.toUpperCase()}</h1>
-                  <p className="text-blue-700 font-semibold">NIT: 900.123.456-7</p>
-                  <p className="text-blue-700">📍 Bogotá, Colombia</p>
-                </div>
+            <div className="space-y-6">
+              {/* Encabezado de la empresa */}
+              <div className="text-center border-b pb-6">
+                <img 
+                  src="/lovable-uploads/09667bc0-9af8-468b-9c4c-d4844d158bc0.png" 
+                  alt="Vity Logo" 
+                  className="h-16 w-auto mx-auto mb-4"
+                />
+                <h1 className="text-3xl font-bold text-vity-green mb-2">{employeeData.empresa.toUpperCase()}</h1>
+                <p className="text-gray-600">NIT: 900.123.456-7</p>
+                <p className="text-gray-600">Bogotá, Colombia</p>
+              </div>
 
-                <div className="text-center mb-8">
-                  <h2 className="text-3xl font-bold text-blue-900 mb-2">
-                    🏆 CERTIFICACIÓN LABORAL
-                  </h2>
-                  <p className="text-blue-700 font-semibold">
-                    📅 Fecha de expedición: {new Date().toLocaleDateString('es-ES')}
-                  </p>
-                </div>
+              {/* Título del certificado */}
+              <div className="text-center">
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                  CERTIFICACIÓN LABORAL
+                </h2>
+                <p className="text-gray-600">
+                  Fecha de expedición: {new Date().toLocaleDateString('es-ES')}
+                </p>
+              </div>
 
-                <div className="bg-white p-6 rounded-2xl shadow-inner mb-6">
-                  <p className="text-gray-800 leading-relaxed text-justify text-lg">
-                    {getCertificateContent()}
-                  </p>
-                </div>
+              {/* Contenido del certificado */}
+              <div className="bg-gray-50 p-6 rounded-lg">
+                <p className="text-gray-800 leading-relaxed text-justify">
+                  {getCertificateContent()}
+                </p>
+              </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  {/* Employee info cards with gradients */}
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-2xl">
-                    <span className="text-sm font-medium text-blue-600">👤 Empleado:</span>
-                    <p className="font-bold text-blue-900">{employeeData.nombre}</p>
-                  </div>
-                  <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-2xl">
-                    <span className="text-sm font-medium text-purple-600">🆔 Documento:</span>
-                    <p className="font-bold text-purple-900">{employeeData.tipo_documento} {employeeData.numero_documento}</p>
-                  </div>
-                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-2xl">
-                    <span className="text-sm font-medium text-green-600">💼 Cargo:</span>
-                    <p className="font-bold text-green-900">{employeeData.cargo}</p>
-                  </div>
-                  <div className="bg-gradient-to-r from-yellow-50 to-orange-50 p-4 rounded-2xl">
-                    <span className="text-sm font-medium text-yellow-600">🏢 Empresa:</span>
-                    <p className="font-bold text-yellow-900">{employeeData.empresa}</p>
-                  </div>
-                  <div className="bg-gradient-to-r from-red-50 to-pink-50 p-4 rounded-2xl">
-                    <span className="text-sm font-medium text-red-600">📅 Fecha de Ingreso:</span>
-                    <p className="font-bold text-red-900">{formatDate(employeeData.fecha_ingreso)}</p>
-                  </div>
-                  {employeeData.fecha_retiro && (
-                    <div className="bg-gradient-to-r from-teal-50 to-cyan-50 p-4 rounded-2xl">
-                      <span className="text-sm font-medium text-teal-600">📅 Fecha de Retiro:</span>
-                      <p className="font-bold text-teal-900">{formatDate(employeeData.fecha_retiro)}</p>
-                    </div>
-                  )}
+              {/* Información adicional */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm bg-blue-50 p-4 rounded-lg">
+                <div>
+                  <span className="font-medium text-blue-800">Empleado:</span>
+                  <p className="text-blue-700">{employeeData.nombre}</p>
                 </div>
+                <div>
+                  <span className="font-medium text-blue-800">Documento:</span>
+                  <p className="text-blue-700">{employeeData.tipo_documento} {employeeData.numero_documento}</p>
+                </div>
+                <div>
+                  <span className="font-medium text-blue-800">Cargo:</span>
+                  <p className="text-blue-700">{employeeData.cargo}</p>
+                </div>
+                <div>
+                  <span className="font-medium text-blue-800">Empresa:</span>
+                  <p className="text-blue-700">{employeeData.empresa}</p>
+                </div>
+                <div>
+                  <span className="font-medium text-blue-800">Fecha de ingreso:</span>
+                  <p className="text-blue-700">{formatDate(employeeData.fecha_ingreso)}</p>
+                </div>
+                {employeeData.fecha_retiro && (
+                  <div>
+                    <span className="font-medium text-blue-800">Fecha de retiro:</span>
+                    <p className="text-blue-700">{formatDate(employeeData.fecha_retiro)}</p>
+                  </div>
+                )}
+              </div>
 
-                <div className="text-center text-sm text-gray-600 border-t-2 border-blue-200 pt-6 mt-6">
-                  <p className="font-semibold">🔒 Este certificado es válido con firma digital y código de verificación</p>
-                  <p className="font-mono text-lg mt-2 bg-blue-100 inline-block px-4 py-2 rounded-lg">
-                    🆔 VTY-{employeeData.numero_documento}-{Date.now().toString().slice(-6)}
-                  </p>
-                </div>
+              {/* Pie del certificado */}
+              <div className="text-center text-sm text-gray-600 border-t pt-6">
+                <p>Este certificado es válido con firma digital y código de verificación</p>
+                <p className="font-mono text-xs mt-2">Código: VTY-{employeeData.numero_documento}-{Date.now().toString().slice(-6)}</p>
               </div>
             </div>
           )}
         </CardContent>
       </Card>
 
+      {/* Botones de acción */}
       {isGenerated && (
-        <Card className="border-0 shadow-2xl bg-white/90 backdrop-blur-xl rounded-3xl overflow-hidden">
-          <CardContent className="p-8">
+        <Card className="border-0 shadow-xl bg-white/95 backdrop-blur-sm">
+          <CardContent className="p-6">
             <div className="flex flex-col md:flex-row gap-4">
               <Button 
                 onClick={downloadCertificate}
-                className="flex-1 h-16 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold text-lg rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-lg"
+                className="flex-1 h-12 bg-vity-green hover:bg-vity-green-dark text-white font-semibold transition-all duration-200 transform hover:scale-105"
               >
-                <Download className="h-6 w-6 mr-3" />
-                📥 Descargar Certificado
+                <Download className="h-5 w-5 mr-2" />
+                Descargar Certificado PDF
               </Button>
               
               <Button 
                 onClick={onBack}
                 variant="outline"
-                className="h-16 border-2 border-blue-300 text-blue-600 hover:bg-blue-50 rounded-2xl font-bold text-lg px-8"
+                className="h-12 border-vity-green text-vity-green hover:bg-vity-green/10"
               >
-                <RotateCcw className="h-5 w-5 mr-2" />
-                🔄 Generar Otro
+                Generar Otro
               </Button>
               
               <Button 
                 onClick={onStartOver}
                 variant="outline"
-                className="h-16 border-2 border-purple-300 text-purple-600 hover:bg-purple-50 rounded-2xl font-bold text-lg px-8"
+                className="h-12"
               >
-                <ArrowLeft className="h-5 w-5 mr-2" />
-                👤 Nuevo Usuario
+                Nuevo Usuario
               </Button>
             </div>
           </CardContent>
