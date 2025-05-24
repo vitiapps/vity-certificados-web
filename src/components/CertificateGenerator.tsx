@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Download, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 
 interface CertificateGeneratorProps {
   employeeData: any;
@@ -51,21 +50,9 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
     setIsGenerating(true);
     
     // Simular generación del certificado
-    setTimeout(async () => {
+    setTimeout(() => {
       setIsGenerating(false);
       setIsGenerated(true);
-      
-      // Registrar la consulta en la base de datos (opcional, para estadísticas)
-      try {
-        await supabase.from('consultas_certificados').insert({
-          numero_documento: employeeData.numero_documento,
-          nombre: employeeData.nombre,
-          tipo_certificado: certificateType,
-          fecha_consulta: new Date().toISOString()
-        });
-      } catch (error) {
-        console.log('No se pudo registrar la consulta (tabla no existe):', error);
-      }
       
       console.log('Certificado generado para:', {
         cedula: employeeData.numero_documento,
