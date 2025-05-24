@@ -16,6 +16,18 @@ const CertificateOptions: React.FC<CertificateOptionsProps> = ({
   onGenerateCertificate,
   onBack
 }) => {
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0
+    }).format(amount);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('es-ES');
+  };
+
   const certificateTypes = [
     {
       id: 'empleado-activo',
@@ -23,7 +35,7 @@ const CertificateOptions: React.FC<CertificateOptionsProps> = ({
       description: 'Certificado de vinculación laboral actual',
       icon: User,
       color: 'bg-green-500',
-      available: employeeData.estado === 'Activo'
+      available: employeeData.estado === 'ACTIVO'
     },
     {
       id: 'empleado-retirado',
@@ -31,7 +43,7 @@ const CertificateOptions: React.FC<CertificateOptionsProps> = ({
       description: 'Certificado de desvinculación laboral',
       icon: Calendar,
       color: 'bg-blue-500',
-      available: employeeData.estado === 'Retirado'
+      available: employeeData.estado === 'RETIRADO'
     },
     {
       id: 'historial-completo',
@@ -58,28 +70,44 @@ const CertificateOptions: React.FC<CertificateOptionsProps> = ({
               <p className="font-semibold text-gray-800">{employeeData.nombre}</p>
             </div>
             <div>
-              <span className="font-medium text-gray-600">Cédula:</span>
-              <p className="font-semibold text-gray-800">{employeeData.cedula}</p>
+              <span className="font-medium text-gray-600">Documento:</span>
+              <p className="font-semibold text-gray-800">{employeeData.tipo_documento} {employeeData.numero_documento}</p>
+            </div>
+            <div>
+              <span className="font-medium text-gray-600">Cargo:</span>
+              <p className="font-semibold text-gray-800">{employeeData.cargo}</p>
+            </div>
+            <div>
+              <span className="font-medium text-gray-600">Empresa:</span>
+              <p className="font-semibold text-gray-800">{employeeData.empresa}</p>
             </div>
             <div>
               <span className="font-medium text-gray-600">Estado:</span>
               <Badge 
-                variant={employeeData.estado === 'Activo' ? 'default' : 'secondary'}
-                className={employeeData.estado === 'Activo' ? 'bg-vity-green' : 'bg-gray-500'}
+                variant={employeeData.estado === 'ACTIVO' ? 'default' : 'secondary'}
+                className={employeeData.estado === 'ACTIVO' ? 'bg-vity-green' : 'bg-gray-500'}
               >
                 {employeeData.estado}
               </Badge>
             </div>
             <div>
-              <span className="font-medium text-gray-600">Fecha de Ingreso:</span>
-              <p className="font-semibold text-gray-800">{employeeData.fechaIngreso}</p>
+              <span className="font-medium text-gray-600">Salario:</span>
+              <p className="font-semibold text-gray-800">{formatCurrency(employeeData.sueldo)}</p>
             </div>
-            {employeeData.fechaRetiro && (
-              <div className="md:col-span-2">
+            <div>
+              <span className="font-medium text-gray-600">Fecha de Ingreso:</span>
+              <p className="font-semibold text-gray-800">{formatDate(employeeData.fecha_ingreso)}</p>
+            </div>
+            {employeeData.fecha_retiro && (
+              <div>
                 <span className="font-medium text-gray-600">Fecha de Retiro:</span>
-                <p className="font-semibold text-gray-800">{employeeData.fechaRetiro}</p>
+                <p className="font-semibold text-gray-800">{formatDate(employeeData.fecha_retiro)}</p>
               </div>
             )}
+            <div className="md:col-span-2">
+              <span className="font-medium text-gray-600">Tipo de Contrato:</span>
+              <p className="font-semibold text-gray-800">{employeeData.tipo_contrato}</p>
+            </div>
           </div>
         </CardContent>
       </Card>

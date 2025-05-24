@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Download, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CertificateGeneratorProps {
   employeeData: any;
@@ -29,6 +30,18 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
     'historial-completo': 'Historial Completo'
   };
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0
+    }).format(amount);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('es-ES');
+  };
+
   useEffect(() => {
     // Auto-generar el certificado al cargar el componente
     generateCertificate();
@@ -38,20 +51,28 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
     setIsGenerating(true);
     
     // Simular generación del certificado
-    setTimeout(() => {
+    setTimeout(async () => {
       setIsGenerating(false);
       setIsGenerated(true);
       
-      // Aquí se registraría en Google Sheets
-      console.log('Registrando en Google Sheets:', {
-        cedula: employeeData.cedula,
+      // Registrar la consulta en la base de datos (opcional, para estadísticas)
+      try {
+        await supabase.from('consultas_certificados').insert({
+          numero_documento: employeeData.numero_documento,
+          nombre: employeeData.nombre,
+          tipo_certificado: certificateType,
+          fecha_consulta: new Date().toISOString()
+        });
+      } catch (error) {
+        console.log('No se pudo registrar la consulta (tabla no existe):', error);
+      }
+      
+      console.log('Certificado generado para:', {
+        cedula: employeeData.numero_documento,
         nombre: employeeData.nombre,
+        empresa: employeeData.empresa,
         estado: employeeData.estado,
-        fechaIngreso: employeeData.fechaIngreso,
-        fechaRetiro: employeeData.fechaRetiro || 'N/A',
-        correo: employeeData.correo,
-        tipoConsulta: certificateType,
-        fechaConsulta: new Date().toISOString()
+        tipoConsulta: certificateType
       });
       
       toast({
@@ -71,22 +92,24 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
     // Simular descarga
     const link = document.createElement('a');
     link.href = '#'; // En la implementación real sería la URL del PDF generado
-    link.download = `certificado_${employeeData.cedula}_${Date.now()}.pdf`;
+    link.download = `certificado_${employeeData.numero_documento}_${Date.now()}.pdf`;
     // link.click(); // Comentado para no activar descarga real en la demo
   };
 
   const getCertificateContent = () => {
-    const today = new Date().toLocaleDateString('es-ES');
-    
     switch (certificateType) {
       case 'empleado-activo':
-        return `La empresa certifica que ${employeeData.nombre}, identificado(a) con cédula de ciudadanía No. ${employeeData.cedula}, se encuentra vinculado(a) laboralmente desde el ${employeeData.fechaIngreso} y a la fecha continúa prestando sus servicios de manera activa.`;
+        return `La empresa ${employeeData.empresa} certifica que ${employeeData.nombre}, identificado(a) con ${employeeData.tipo_documento} No. ${employeeData.numero_documento}, se encuentra vinculado(a) laboralmente desde el ${formatDate(employeeData.fecha_ingreso)} desempeñando el cargo de ${employeeData.cargo} con un salario de ${formatCurrency(employeeData.sueldo)}, y a la fecha continúa prestando sus servicios de manera activa bajo contrato ${employeeData.tipo_contrato}.`;
       
       case 'empleado-retirado':
-        return `La empresa certifica que ${employeeData.nombre}, identificado(a) con cédula de ciudadanía No. ${employeeData.cedula}, laboró en la empresa desde el ${employeeData.fechaIngreso} hasta el ${employeeData.fechaRetiro}, fecha en la cual se retiró de la organización.`;
+        return `La empresa ${employeeData.empresa} certifica que ${employeeData.nombre}, identificado(a) con ${employeeData.tipo_documento} No. ${employeeData.numero_documento}, laboró en la empresa desde el ${formatDate(employeeData.fecha_ingreso)} hasta el ${formatDate(employeeData.fecha_retiro)}, desempeñando el cargo de ${employeeData.cargo} con un salario de ${formatCurrency(employeeData.sueldo)} bajo contrato ${employeeData.tipo_contrato}, fecha en la cual se retiró de la organización.`;
       
       case 'historial-completo':
-        return `La empresa certifica que ${employeeData.nombre}, identificado(a) con cédula de ciudadanía No. ${employeeData.cedula}, ${employeeData.estado === 'Activo' ? `se encuentra vinculado(a) laboralmente desde el ${employeeData.fechaIngreso} y a la fecha continúa prestando sus servicios` : `laboró en la empresa desde el ${employeeData.fechaIngreso} hasta el ${employeeData.fechaRetiro}`}. Estado actual: ${employeeData.estado}.`;
+        const statusText = employeeData.estado === 'ACTIVO' 
+          ? `se encuentra vinculado(a) laboralmente desde el ${formatDate(employeeData.fecha_ingreso)} y a la fecha continúa prestando sus servicios`
+          : `laboró en la empresa desde el ${formatDate(employeeData.fecha_ingreso)} hasta el ${formatDate(employeeData.fecha_retiro)}`;
+        
+        return `La empresa ${employeeData.empresa} certifica que ${employeeData.nombre}, identificado(a) con ${employeeData.tipo_documento} No. ${employeeData.numero_documento}, ${statusText} desempeñando el cargo de ${employeeData.cargo} con un salario de ${formatCurrency(employeeData.sueldo)} bajo contrato ${employeeData.tipo_contrato}. Estado actual: ${employeeData.estado}.`;
       
       default:
         return '';
@@ -127,7 +150,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
                   alt="Vity Logo" 
                   className="h-16 w-auto mx-auto mb-4"
                 />
-                <h1 className="text-3xl font-bold text-vity-green mb-2">EMPRESA VITY S.A.S.</h1>
+                <h1 className="text-3xl font-bold text-vity-green mb-2">{employeeData.empresa.toUpperCase()}</h1>
                 <p className="text-gray-600">NIT: 900.123.456-7</p>
                 <p className="text-gray-600">Bogotá, Colombia</p>
               </div>
@@ -157,16 +180,24 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
                 </div>
                 <div>
                   <span className="font-medium text-blue-800">Documento:</span>
-                  <p className="text-blue-700">{employeeData.cedula}</p>
+                  <p className="text-blue-700">{employeeData.tipo_documento} {employeeData.numero_documento}</p>
+                </div>
+                <div>
+                  <span className="font-medium text-blue-800">Cargo:</span>
+                  <p className="text-blue-700">{employeeData.cargo}</p>
+                </div>
+                <div>
+                  <span className="font-medium text-blue-800">Empresa:</span>
+                  <p className="text-blue-700">{employeeData.empresa}</p>
                 </div>
                 <div>
                   <span className="font-medium text-blue-800">Fecha de ingreso:</span>
-                  <p className="text-blue-700">{employeeData.fechaIngreso}</p>
+                  <p className="text-blue-700">{formatDate(employeeData.fecha_ingreso)}</p>
                 </div>
-                {employeeData.fechaRetiro && (
+                {employeeData.fecha_retiro && (
                   <div>
                     <span className="font-medium text-blue-800">Fecha de retiro:</span>
-                    <p className="text-blue-700">{employeeData.fechaRetiro}</p>
+                    <p className="text-blue-700">{formatDate(employeeData.fecha_retiro)}</p>
                   </div>
                 )}
               </div>
@@ -174,7 +205,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
               {/* Pie del certificado */}
               <div className="text-center text-sm text-gray-600 border-t pt-6">
                 <p>Este certificado es válido con firma digital y código de verificación</p>
-                <p className="font-mono text-xs mt-2">Código: VTY-{employeeData.cedula}-{Date.now().toString().slice(-6)}</p>
+                <p className="font-mono text-xs mt-2">Código: VTY-{employeeData.numero_documento}-{Date.now().toString().slice(-6)}</p>
               </div>
             </div>
           )}

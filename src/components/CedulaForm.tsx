@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CedulaFormProps {
   onCedulaValidated: (cedula: string, employeeData: any) => void;
@@ -14,26 +15,6 @@ const CedulaForm: React.FC<CedulaFormProps> = ({ onCedulaValidated }) => {
   const [cedula, setCedula] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-
-  // Datos de ejemplo para demostración
-  const mockEmployees = [
-    {
-      cedula: '12345678',
-      nombre: 'Juan Pérez',
-      estado: 'Activo',
-      fechaIngreso: '2020-01-15',
-      fechaRetiro: null,
-      correo: 'juan.perez@empresa.com'
-    },
-    {
-      cedula: '87654321',
-      nombre: 'María García',
-      estado: 'Retirado',
-      fechaIngreso: '2018-03-20',
-      fechaRetiro: '2023-12-31',
-      correo: 'maria.garcia@empresa.com'
-    }
-  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,10 +30,24 @@ const CedulaForm: React.FC<CedulaFormProps> = ({ onCedulaValidated }) => {
 
     setIsLoading(true);
 
-    // Simular validación de cédula
-    setTimeout(() => {
-      const employee = mockEmployees.find(emp => emp.cedula === cedula);
-      
+    try {
+      // Buscar empleado en la base de datos de Supabase
+      const { data: employee, error } = await supabase
+        .from('empleados')
+        .select('*')
+        .eq('numero_documento', cedula.trim())
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error searching employee:', error);
+        toast({
+          title: "Error",
+          description: "Hubo un problema al buscar en la base de datos. Intenta nuevamente.",
+          variant: "destructive"
+        });
+        return;
+      }
+
       if (employee) {
         toast({
           title: "¡Empleado encontrado!",
@@ -66,9 +61,16 @@ const CedulaForm: React.FC<CedulaFormProps> = ({ onCedulaValidated }) => {
           variant: "destructive"
         });
       }
-      
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      toast({
+        title: "Error",
+        description: "Hubo un error inesperado. Intenta nuevamente.",
+        variant: "destructive"
+      });
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -91,7 +93,7 @@ const CedulaForm: React.FC<CedulaFormProps> = ({ onCedulaValidated }) => {
               <Input
                 id="cedula"
                 type="text"
-                placeholder="Ej: 12345678"
+                placeholder="Ej: 1024532077"
                 value={cedula}
                 onChange={(e) => setCedula(e.target.value)}
                 className="h-12 text-lg border-2 border-gray-200 focus:border-vity-green focus:ring-vity-green/20"
@@ -110,11 +112,13 @@ const CedulaForm: React.FC<CedulaFormProps> = ({ onCedulaValidated }) => {
           
           <div className="mt-6 p-4 bg-blue-50 rounded-lg">
             <p className="text-sm text-blue-800 font-medium mb-2">
-              📋 Para probar la aplicación, usa:
+              📋 Cédulas de prueba disponibles:
             </p>
             <ul className="text-xs text-blue-700 space-y-1">
-              <li>• Cédula: <strong>12345678</strong> (Empleado activo)</li>
-              <li>• Cédula: <strong>87654321</strong> (Empleado retirado)</li>
+              <li>• <strong>1024532077</strong> - Lizeth Acevedo (Activo)</li>
+              <li>• <strong>1019133853</strong> - Diego Cruz (Activo)</li>
+              <li>• <strong>51992347</strong> - Carmen Salcedo (Activo)</li>
+              <li>• <strong>107008356</strong> - Andrés Rodríguez (Retirado)</li>
             </ul>
           </div>
         </CardContent>
