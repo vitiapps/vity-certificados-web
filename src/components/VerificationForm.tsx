@@ -150,12 +150,17 @@ const VerificationForm: React.FC<VerificationFormProps> = ({
           </form>
           
           <div className="mt-6 p-4 bg-yellow-50 rounded-lg">
-            <p className="text-sm text-yellow-800 font-medium mb-1">
+            <p className="text-sm text-yellow-800 font-medium mb-2">
               💡 Para probar la aplicación:
             </p>
-            <p className="text-xs text-yellow-700">
-              El código aparece en la consola del navegador
-            </p>
+            <div className="space-y-1">
+              <p className="text-xs text-yellow-700">
+                Código de verificación: <span className="font-mono font-bold text-lg text-yellow-900">{generatedCode}</span>
+              </p>
+              <p className="text-xs text-yellow-600">
+                También aparece en la consola del navegador
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>
