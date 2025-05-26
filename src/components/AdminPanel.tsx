@@ -3,12 +3,13 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Database } from 'lucide-react';
+import { Upload, Database, Download } from 'lucide-react';
 import ExcelUploader from './ExcelUploader';
+import ExcelDownloader from './ExcelDownloader';
 import EmployeeList from './EmployeeList';
 
 const AdminPanel: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'upload' | 'employees'>('upload');
+  const [activeTab, setActiveTab] = useState<'upload' | 'download' | 'employees'>('upload');
   const { toast } = useToast();
 
   return (
@@ -26,6 +27,14 @@ const AdminPanel: React.FC = () => {
           
           <div className="flex justify-center mb-6">
             <div className="flex bg-gray-100 rounded-lg p-1">
+              <Button
+                variant={activeTab === 'download' ? 'default' : 'ghost'}
+                onClick={() => setActiveTab('download')}
+                className="flex items-center gap-2"
+              >
+                <Download size={16} />
+                Descargar Base
+              </Button>
               <Button
                 variant={activeTab === 'upload' ? 'default' : 'ghost'}
                 onClick={() => setActiveTab('upload')}
@@ -46,6 +55,7 @@ const AdminPanel: React.FC = () => {
           </div>
 
           <CardContent>
+            {activeTab === 'download' && <ExcelDownloader />}
             {activeTab === 'upload' && <ExcelUploader />}
             {activeTab === 'employees' && <EmployeeList />}
           </CardContent>
