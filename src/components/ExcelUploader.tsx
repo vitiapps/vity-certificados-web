@@ -28,6 +28,36 @@ const ExcelUploader: React.FC = () => {
   const [preview, setPreview] = useState<EmployeeData[]>([]);
   const { toast } = useToast();
 
+  const mapExcelRowToEmployee = (row: any): EmployeeData | null => {
+    console.log('Raw row data:', row);
+    
+    // Try different possible column names
+    const nombre = row['Nombre'] || row['nombre'] || row['NOMBRE'] || row['Name'] || '';
+    const numero_documento = String(row['Número Documento'] || row['numero_documento'] || row['NUMERO_DOCUMENTO'] || row['Cedula'] || row['cedula'] || row['CEDULA'] || row['Document'] || '').trim();
+    const correo = row['Correo'] || row['correo'] || row['CORREO'] || row['Email'] || row['email'] || row['EMAIL'] || '';
+    const cargo = row['Cargo'] || row['cargo'] || row['CARGO'] || row['Position'] || '';
+    
+    // Skip rows with missing critical data
+    if (!nombre || !numero_documento) {
+      console.log('Skipping row due to missing critical data:', { nombre, numero_documento });
+      return null;
+    }
+
+    return {
+      nombre: nombre.trim(),
+      numero_documento: numero_documento,
+      tipo_documento: row['Tipo Documento'] || row['tipo_documento'] || row['TIPO_DOCUMENTO'] || 'CC',
+      correo: correo.trim(),
+      cargo: cargo.trim(),
+      empresa: row['Empresa'] || row['empresa'] || row['EMPRESA'] || 'Vity',
+      tipo_contrato: row['Tipo Contrato'] || row['tipo_contrato'] || row['TIPO_CONTRATO'] || 'Indefinido',
+      fecha_ingreso: row['Fecha Ingreso'] || row['fecha_ingreso'] || row['FECHA_INGRESO'] || '',
+      fecha_retiro: row['Fecha Retiro'] || row['fecha_retiro'] || row['FECHA_RETIRO'] || null,
+      estado: row['Estado'] || row['estado'] || row['ESTADO'] || 'Activo',
+      sueldo: row['Sueldo'] || row['sueldo'] || row['SUELDO'] || null
+    };
+  };
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (!selectedFile) return;
@@ -48,31 +78,55 @@ const ExcelUploader: React.FC = () => {
     reader.onload = (event) => {
       try {
         const fileData = new Uint8Array(event.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(fileData, { type: 'array' });
+        const workbook = XLSX.read(fileData, { type: 'array', cellDates: true, cellNF: false, cellText: false });
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
         
-        // Mapear las columnas del Excel a nuestro formato
-        const mappedData: EmployeeData[] = jsonData.map((row) => ({
-          nombre: row['Nombre'] || row['nombre'] || '',
-          numero_documento: String(row['Número Documento'] || row['numero_documento'] || row['Cedula'] || row['cedula'] || ''),
-          tipo_documento: row['Tipo Documento'] || row['tipo_documento'] || 'CC',
-          correo: row['Correo'] || row['correo'] || row['Email'] || row['email'] || '',
-          cargo: row['Cargo'] || row['cargo'] || '',
-          empresa: row['Empresa'] || row['empresa'] || 'Vity',
-          tipo_contrato: row['Tipo Contrato'] || row['tipo_contrato'] || 'Indefinido',
-          fecha_ingreso: row['Fecha Ingreso'] || row['fecha_ingreso'] || '',
-          fecha_retiro: row['Fecha Retiro'] || row['fecha_retiro'] || null,
-          estado: row['Estado'] || row['estado'] || 'Activo',
-          sueldo: row['Sueldo'] || row['sueldo'] || null
-        }));
+        // Convert to JSON with header row detection
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+          header: 1,
+          defval: '',
+          blankrows: false
+        }) as any[][];
+        
+        console.log('Raw Excel data:', jsonData);
+
+        if (jsonData.length < 2) {
+          toast({
+            title: "Error",
+            description: "El archivo debe contener al menos una fila de encabezados y una fila de datos",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        // Get headers (first row)
+        const headers = jsonData[0];
+        console.log('Headers found:', headers);
+
+        // Convert rows to objects using headers
+        const rowObjects = jsonData.slice(1).map(row => {
+          const obj: any = {};
+          headers.forEach((header: string, index: number) => {
+            obj[header] = row[index] || '';
+          });
+          return obj;
+        });
+
+        console.log('Row objects:', rowObjects);
+
+        // Map to employee data
+        const mappedData: EmployeeData[] = rowObjects
+          .map(mapExcelRowToEmployee)
+          .filter((emp): emp is EmployeeData => emp !== null);
+
+        console.log('Mapped employee data:', mappedData);
 
         setPreview(mappedData.slice(0, 5)); // Mostrar solo los primeros 5 para preview
         
         toast({
           title: "Archivo cargado",
-          description: `Se encontraron ${jsonData.length} registros. Revisa el preview antes de guardar.`
+          description: `Se encontraron ${mappedData.length} registros válidos. Revisa el preview antes de guardar.`
         });
       } catch (error) {
         console.error('Error reading file:', error);
@@ -96,27 +150,42 @@ const ExcelUploader: React.FC = () => {
       reader.onload = async (event) => {
         try {
           const uploadData = new Uint8Array(event.target?.result as ArrayBuffer);
-          const workbook = XLSX.read(uploadData, { type: 'array' });
+          const workbook = XLSX.read(uploadData, { type: 'array', cellDates: true, cellNF: false, cellText: false });
           const sheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[sheetName];
-          const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
           
-          // Mapear y limpiar datos
-          const employeesData: EmployeeData[] = jsonData.map((row) => ({
-            nombre: row['Nombre'] || row['nombre'] || '',
-            numero_documento: String(row['Número Documento'] || row['numero_documento'] || row['Cedula'] || row['cedula'] || ''),
-            tipo_documento: row['Tipo Documento'] || row['tipo_documento'] || 'CC',
-            correo: row['Correo'] || row['correo'] || row['Email'] || row['email'] || '',
-            cargo: row['Cargo'] || row['cargo'] || '',
-            empresa: row['Empresa'] || row['empresa'] || 'Vity',
-            tipo_contrato: row['Tipo Contrato'] || row['tipo_contrato'] || 'Indefinido',
-            fecha_ingreso: row['Fecha Ingreso'] || row['fecha_ingreso'] || '',
-            fecha_retiro: row['Fecha Retiro'] || row['fecha_retiro'] || null,
-            estado: row['Estado'] || row['estado'] || 'Activo',
-            sueldo: row['Sueldo'] || row['sueldo'] || null
-          })).filter(emp => emp.nombre && emp.numero_documento); // Filtrar registros incompletos
+          // Convert to JSON with header row detection
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+            header: 1,
+            defval: '',
+            blankrows: false
+          }) as any[][];
 
-          console.log('Datos a insertar:', employeesData);
+          // Get headers and convert to objects
+          const headers = jsonData[0];
+          const rowObjects = jsonData.slice(1).map(row => {
+            const obj: any = {};
+            headers.forEach((header: string, index: number) => {
+              obj[header] = row[index] || '';
+            });
+            return obj;
+          });
+
+          // Map and filter employee data
+          const employeesData: EmployeeData[] = rowObjects
+            .map(mapExcelRowToEmployee)
+            .filter((emp): emp is EmployeeData => emp !== null);
+
+          console.log('Final datos a insertar:', employeesData);
+
+          if (employeesData.length === 0) {
+            toast({
+              title: "Error",
+              description: "No se encontraron registros válidos en el archivo",
+              variant: "destructive"
+            });
+            return;
+          }
 
           // Insertar en la base de datos usando upsert para actualizar existentes
           const { data: insertResult, error } = await supabase
@@ -171,18 +240,21 @@ const ExcelUploader: React.FC = () => {
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <h3 className="font-semibold text-blue-800 mb-2">Formato del Excel</h3>
         <p className="text-blue-600 text-sm mb-2">
-          El archivo debe contener las siguientes columnas (pueden estar en español):
+          El archivo debe contener las siguientes columnas (pueden estar en español o inglés):
         </p>
         <div className="grid grid-cols-2 gap-2 text-sm text-blue-600">
-          <span>• Nombre</span>
+          <span>• Nombre / Name</span>
           <span>• Número Documento / Cedula</span>
           <span>• Correo / Email</span>
-          <span>• Cargo</span>
+          <span>• Cargo / Position</span>
           <span>• Empresa</span>
           <span>• Tipo Contrato</span>
           <span>• Fecha Ingreso</span>
           <span>• Estado</span>
         </div>
+        <p className="text-blue-600 text-xs mt-2">
+          <strong>Importante:</strong> La primera fila debe contener los encabezados de las columnas.
+        </p>
       </div>
 
       <div className="space-y-4">
