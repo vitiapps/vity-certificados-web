@@ -109,18 +109,6 @@ const CedulaForm: React.FC<CedulaFormProps> = ({ onCedulaValidated }) => {
               {isLoading ? 'Validando...' : 'Continuar'}
             </Button>
           </form>
-          
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-            <p className="text-sm text-blue-800 font-medium mb-2">
-              📋 Cédulas de prueba disponibles:
-            </p>
-            <ul className="text-xs text-blue-700 space-y-1">
-              <li>• <strong>1024532077</strong> - Lizeth Acevedo (Activo)</li>
-              <li>• <strong>1019133853</strong> - Diego Cruz (Activo)</li>
-              <li>• <strong>51992347</strong> - Carmen Salcedo (Activo)</li>
-              <li>• <strong>107008356</strong> - Andrés Rodríguez (Retirado)</li>
-            </ul>
-          </div>
         </CardContent>
       </Card>
     </div>

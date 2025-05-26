@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -70,17 +69,185 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
   };
 
   const downloadCertificate = () => {
-    // En una implementación real, aquí se generaría y descargaría el PDF
-    toast({
-      title: "Descarga iniciada",
-      description: "Tu certificado se está descargando...",
-    });
-    
-    // Simular descarga
-    const link = document.createElement('a');
-    link.href = '#'; // En la implementación real sería la URL del PDF generado
-    link.download = `certificado_${employeeData.numero_documento}_${Date.now()}.pdf`;
-    // link.click(); // Comentado para no activar descarga real en la demo
+    try {
+      // Crear el contenido HTML del certificado
+      const certificateHTML = generateCertificateHTML();
+      
+      // Crear un blob con el contenido HTML
+      const blob = new Blob([certificateHTML], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      
+      // Crear un elemento de descarga
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `certificado_laboral_${employeeData.numero_documento}_${Date.now()}.html`;
+      
+      // Ejecutar la descarga
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Limpiar la URL del objeto
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "¡Descarga completada!",
+        description: "Tu certificado se ha descargado correctamente",
+      });
+    } catch (error) {
+      console.error('Error al descargar el certificado:', error);
+      toast({
+        title: "Error en la descarga",
+        description: "Hubo un problema al descargar el certificado. Intenta nuevamente.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const generateCertificateHTML = () => {
+    const certificateContent = getCertificateContent();
+    const currentDate = new Date().toLocaleDateString('es-ES');
+    const verificationCode = `VTY-${employeeData.numero_documento}-${Date.now().toString().slice(-6)}`;
+
+    return `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificado Laboral - ${employeeData.nombre}</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            line-height: 1.6;
+            background: #f8f9fa;
+        }
+        .certificate {
+            background: white;
+            padding: 60px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #22c55e;
+            padding-bottom: 30px;
+            margin-bottom: 40px;
+        }
+        .company-name {
+            font-size: 32px;
+            font-weight: bold;
+            color: #22c55e;
+            margin-bottom: 10px;
+        }
+        .certificate-title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #1f2937;
+            margin: 30px 0;
+        }
+        .content {
+            font-size: 16px;
+            color: #374151;
+            text-align: justify;
+            margin: 30px 0;
+            line-height: 1.8;
+        }
+        .employee-info {
+            background: #f3f4f6;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 30px 0;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .label {
+            font-weight: bold;
+            color: #1f2937;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 2px solid #e5e7eb;
+            font-size: 14px;
+            color: #6b7280;
+        }
+        .verification-code {
+            font-family: monospace;
+            font-size: 12px;
+            background: #f3f4f6;
+            padding: 5px 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        @media print {
+            body { background: white; }
+            .certificate { box-shadow: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="certificate">
+        <div class="header">
+            <div class="company-name">${employeeData.empresa.toUpperCase()}</div>
+            <div style="color: #6b7280;">NIT: 900.123.456-7</div>
+            <div style="color: #6b7280;">Bogotá, Colombia</div>
+        </div>
+
+        <div style="text-align: center;">
+            <h1 class="certificate-title">CERTIFICACIÓN LABORAL</h1>
+            <div style="color: #6b7280; margin-bottom: 40px;">
+                Fecha de expedición: ${currentDate}
+            </div>
+        </div>
+
+        <div class="content">
+            ${certificateContent}
+        </div>
+
+        <div class="employee-info">
+            <div class="info-row">
+                <span class="label">Empleado:</span>
+                <span>${employeeData.nombre}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Documento:</span>
+                <span>${employeeData.tipo_documento} ${employeeData.numero_documento}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Cargo:</span>
+                <span>${employeeData.cargo}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Empresa:</span>
+                <span>${employeeData.empresa}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Fecha de ingreso:</span>
+                <span>${formatDate(employeeData.fecha_ingreso)}</span>
+            </div>
+            ${employeeData.fecha_retiro ? `
+            <div class="info-row">
+                <span class="label">Fecha de retiro:</span>
+                <span>${formatDate(employeeData.fecha_retiro)}</span>
+            </div>
+            ` : ''}
+        </div>
+
+        <div class="footer">
+            <p>Este certificado es válido con firma digital y código de verificación</p>
+            <div class="verification-code">Código: ${verificationCode}</div>
+        </div>
+    </div>
+</body>
+</html>`;
   };
 
   const getCertificateContent = () => {
