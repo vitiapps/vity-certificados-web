@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import * as XLSX from 'xlsx';
-import { Upload, FileExcel } from 'lucide-react';
+import { Upload, File } from 'lucide-react';
 
 interface EmployeeData {
   nombre: string;
@@ -47,8 +47,8 @@ const ExcelUploader: React.FC = () => {
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
-        const data = new Uint8Array(event.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: 'array' });
+        const fileData = new Uint8Array(event.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(fileData, { type: 'array' });
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
@@ -95,8 +95,8 @@ const ExcelUploader: React.FC = () => {
       const reader = new FileReader();
       reader.onload = async (event) => {
         try {
-          const data = new Uint8Array(event.target?.result as ArrayBuffer);
-          const workbook = XLSX.read(data, { type: 'array' });
+          const uploadData = new Uint8Array(event.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(uploadData, { type: 'array' });
           const sheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[sheetName];
           const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
@@ -119,7 +119,7 @@ const ExcelUploader: React.FC = () => {
           console.log('Datos a insertar:', employeesData);
 
           // Insertar en la base de datos usando upsert para actualizar existentes
-          const { data, error } = await supabase
+          const { data: insertResult, error } = await supabase
             .from('empleados')
             .upsert(employeesData, { 
               onConflict: 'numero_documento',
