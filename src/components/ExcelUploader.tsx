@@ -28,6 +28,63 @@ const ExcelUploader: React.FC = () => {
   const [preview, setPreview] = useState<EmployeeData[]>([]);
   const { toast } = useToast();
 
+  const formatDateForDB = (dateValue: any): string | null => {
+    if (!dateValue || dateValue === '') return null;
+    
+    try {
+      let date: Date;
+      
+      // Si es un número de serie de Excel
+      if (typeof dateValue === 'number') {
+        // Excel date serial number conversion
+        date = new Date((dateValue - 25569) * 86400 * 1000);
+      } 
+      // Si es una fecha de JavaScript
+      else if (dateValue instanceof Date) {
+        date = dateValue;
+      } 
+      // Si es un string, intentar parsearlo
+      else if (typeof dateValue === 'string') {
+        // Intentar diferentes formatos
+        const cleanDate = dateValue.trim();
+        if (cleanDate === '') return null;
+        
+        // Formato DD/MM/YYYY o DD-MM-YYYY
+        if (cleanDate.match(/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/)) {
+          const parts = cleanDate.split(/[\/\-]/);
+          date = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+        }
+        // Formato YYYY-MM-DD
+        else if (cleanDate.match(/^\d{4}-\d{1,2}-\d{1,2}$/)) {
+          date = new Date(cleanDate);
+        }
+        // Otros formatos
+        else {
+          date = new Date(cleanDate);
+        }
+      } 
+      else {
+        return null;
+      }
+      
+      // Verificar que la fecha es válida
+      if (isNaN(date.getTime())) {
+        console.log('Invalid date:', dateValue);
+        return null;
+      }
+      
+      // Formatear como YYYY-MM-DD para PostgreSQL
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      
+      return `${year}-${month}-${day}`;
+    } catch (error) {
+      console.error('Error formatting date:', dateValue, error);
+      return null;
+    }
+  };
+
   const mapExcelRowToEmployee = (row: any): EmployeeData | null => {
     console.log('Raw row data:', row);
     
@@ -43,6 +100,19 @@ const ExcelUploader: React.FC = () => {
       return null;
     }
 
+    // Format dates
+    const fechaIngresoRaw = row['Fecha Ingreso'] || row['fecha_ingreso'] || row['FECHA_INGRESO'] || row['Fecha de Ingreso'] || '';
+    const fechaRetiroRaw = row['Fecha Retiro'] || row['fecha_retiro'] || row['FECHA_RETIRO'] || row['Fecha de Retiro'] || '';
+    
+    const fechaIngreso = formatDateForDB(fechaIngresoRaw);
+    const fechaRetiro = formatDateForDB(fechaRetiroRaw);
+
+    // If fecha_ingreso is required and couldn't be formatted, skip the row
+    if (!fechaIngreso) {
+      console.log('Skipping row due to invalid fecha_ingreso:', fechaIngresoRaw);
+      return null;
+    }
+
     return {
       nombre: nombre.trim(),
       numero_documento: numero_documento,
@@ -51,8 +121,8 @@ const ExcelUploader: React.FC = () => {
       cargo: cargo.trim(),
       empresa: row['Empresa'] || row['empresa'] || row['EMPRESA'] || 'Vity',
       tipo_contrato: row['Tipo Contrato'] || row['tipo_contrato'] || row['TIPO_CONTRATO'] || 'Indefinido',
-      fecha_ingreso: row['Fecha Ingreso'] || row['fecha_ingreso'] || row['FECHA_INGRESO'] || '',
-      fecha_retiro: row['Fecha Retiro'] || row['fecha_retiro'] || row['FECHA_RETIRO'] || null,
+      fecha_ingreso: fechaIngreso,
+      fecha_retiro: fechaRetiro || undefined,
       estado: row['Estado'] || row['estado'] || row['ESTADO'] || 'Activo',
       sueldo: row['Sueldo'] || row['sueldo'] || row['SUELDO'] || null
     };
@@ -249,11 +319,12 @@ const ExcelUploader: React.FC = () => {
           <span>• Cargo / Position</span>
           <span>• Empresa</span>
           <span>• Tipo Contrato</span>
-          <span>• Fecha Ingreso</span>
+          <span>• Fecha Ingreso (DD/MM/YYYY)</span>
           <span>• Estado</span>
         </div>
         <p className="text-blue-600 text-xs mt-2">
           <strong>Importante:</strong> La primera fila debe contener los encabezados de las columnas.
+          Las fechas deben estar en formato DD/MM/YYYY o ser fechas válidas de Excel.
         </p>
       </div>
 
@@ -282,6 +353,7 @@ const ExcelUploader: React.FC = () => {
                   <th className="border border-gray-300 p-2">Documento</th>
                   <th className="border border-gray-300 p-2">Correo</th>
                   <th className="border border-gray-300 p-2">Cargo</th>
+                  <th className="border border-gray-300 p-2">Fecha Ingreso</th>
                 </tr>
               </thead>
               <tbody>
@@ -291,6 +363,7 @@ const ExcelUploader: React.FC = () => {
                     <td className="border border-gray-300 p-2">{emp.numero_documento}</td>
                     <td className="border border-gray-300 p-2">{emp.correo}</td>
                     <td className="border border-gray-300 p-2">{emp.cargo}</td>
+                    <td className="border border-gray-300 p-2">{emp.fecha_ingreso}</td>
                   </tr>
                 ))}
               </tbody>
