@@ -225,6 +225,7 @@ const EditEmployeeDialog: React.FC<EditEmployeeDialogProps> = ({
               <option value="Fijo">Fijo</option>
               <option value="Temporal">Temporal</option>
               <option value="Prestación de servicios">Prestación de servicios</option>
+              <option value="Obra o Labor">Obra o Labor</option>
             </select>
           </div>
 
