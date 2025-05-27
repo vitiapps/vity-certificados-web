@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -156,21 +157,6 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
             margin: 30px 0;
             line-height: 1.8;
         }
-        .employee-info {
-            background: #f3f4f6;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 30px 0;
-        }
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-        }
-        .label {
-            font-weight: bold;
-            color: #1f2937;
-        }
         .footer {
             text-align: center;
             margin-top: 50px;
@@ -212,35 +198,6 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
             ${certificateContent}
         </div>
 
-        <div class="employee-info">
-            <div class="info-row">
-                <span class="label">Empleado:</span>
-                <span>${employeeData.nombre}</span>
-            </div>
-            <div class="info-row">
-                <span class="label">Documento:</span>
-                <span>${employeeData.tipo_documento} ${employeeData.numero_documento}</span>
-            </div>
-            <div class="info-row">
-                <span class="label">Cargo:</span>
-                <span>${employeeData.cargo}</span>
-            </div>
-            <div class="info-row">
-                <span class="label">Empresa:</span>
-                <span>${employeeData.empresa}</span>
-            </div>
-            <div class="info-row">
-                <span class="label">Fecha de ingreso:</span>
-                <span>${formatDate(employeeData.fecha_ingreso)}</span>
-            </div>
-            ${employeeData.fecha_retiro ? `
-            <div class="info-row">
-                <span class="label">Fecha de retiro:</span>
-                <span>${formatDate(employeeData.fecha_retiro)}</span>
-            </div>
-            ` : ''}
-        </div>
-
         <div class="footer">
             <p>Este certificado es válido con firma digital y código de verificación</p>
             <div class="verification-code">Código: ${verificationCode}</div>
@@ -263,7 +220,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
           ? `se encuentra vinculado(a) laboralmente desde el ${formatDate(employeeData.fecha_ingreso)} y a la fecha continúa prestando sus servicios`
           : `laboró en la empresa desde el ${formatDate(employeeData.fecha_ingreso)} hasta el ${formatDate(employeeData.fecha_retiro)}`;
         
-        return `La empresa ${employeeData.empresa} certifica que ${employeeData.nombre}, identificado(a) con ${employeeData.tipo_documento} No. ${employeeData.numero_documento}, ${statusText} desempeñando el cargo de ${employeeData.cargo} con un salario de ${formatCurrency(employeeData.sueldo)} bajo contrato ${employeeData.tipo_contrato}. Estado actual: ${employeeData.estado}.`;
+        return `La empresa ${empleeData.empresa} certifica que ${employeeData.nombre}, identificado(a) con ${employeeData.tipo_documento} No. ${employeeData.numero_documento}, ${statusText} desempeñando el cargo de ${employeeData.cargo} con un salario de ${formatCurrency(employeeData.sueldo)} bajo contrato ${employeeData.tipo_contrato}. Estado actual: ${employeeData.estado}.`;
       
       default:
         return '';
@@ -324,36 +281,6 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
                 <p className="text-gray-800 leading-relaxed text-justify">
                   {getCertificateContent()}
                 </p>
-              </div>
-
-              {/* Información adicional */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm bg-blue-50 p-4 rounded-lg">
-                <div>
-                  <span className="font-medium text-blue-800">Empleado:</span>
-                  <p className="text-blue-700">{employeeData.nombre}</p>
-                </div>
-                <div>
-                  <span className="font-medium text-blue-800">Documento:</span>
-                  <p className="text-blue-700">{employeeData.tipo_documento} {employeeData.numero_documento}</p>
-                </div>
-                <div>
-                  <span className="font-medium text-blue-800">Cargo:</span>
-                  <p className="text-blue-700">{employeeData.cargo}</p>
-                </div>
-                <div>
-                  <span className="font-medium text-blue-800">Empresa:</span>
-                  <p className="text-blue-700">{employeeData.empresa}</p>
-                </div>
-                <div>
-                  <span className="font-medium text-blue-800">Fecha de ingreso:</span>
-                  <p className="text-blue-700">{formatDate(employeeData.fecha_ingreso)}</p>
-                </div>
-                {employeeData.fecha_retiro && (
-                  <div>
-                    <span className="font-medium text-blue-800">Fecha de retiro:</span>
-                    <p className="text-blue-700">{formatDate(employeeData.fecha_retiro)}</p>
-                  </div>
-                )}
               </div>
 
               {/* Pie del certificado */}
