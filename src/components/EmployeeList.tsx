@@ -5,16 +5,22 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Edit } from 'lucide-react';
+import EditEmployeeDialog from './EditEmployeeDialog';
 
 interface Employee {
   id: string;
   nombre: string;
   numero_documento: string;
+  tipo_documento: string;
   correo: string;
   cargo: string;
   empresa: string;
+  tipo_contrato: string;
   estado: string;
   fecha_ingreso: string;
+  fecha_retiro: string | null;
+  sueldo: number | null;
   created_at: string;
 }
 
@@ -23,6 +29,8 @@ const EmployeeList: React.FC = () => {
   const [filteredEmployees, setFilteredEmployees] = useState<Employee[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -103,6 +111,20 @@ const EmployeeList: React.FC = () => {
     }
   };
 
+  const handleEditEmployee = (employee: Employee) => {
+    setEditingEmployee(employee);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleCloseEditDialog = () => {
+    setIsEditDialogOpen(false);
+    setEditingEmployee(null);
+  };
+
+  const handleEmployeeUpdate = () => {
+    fetchEmployees();
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -159,13 +181,24 @@ const EmployeeList: React.FC = () => {
                   </TableCell>
                   <TableCell>{employee.fecha_ingreso}</TableCell>
                   <TableCell>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => deleteEmployee(employee.id)}
-                    >
-                      Eliminar
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditEmployee(employee)}
+                        className="flex items-center gap-1"
+                      >
+                        <Edit size={14} />
+                        Editar
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => deleteEmployee(employee.id)}
+                      >
+                        Eliminar
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -181,6 +214,13 @@ const EmployeeList: React.FC = () => {
           )}
         </div>
       )}
+
+      <EditEmployeeDialog
+        employee={editingEmployee}
+        isOpen={isEditDialogOpen}
+        onClose={handleCloseEditDialog}
+        onUpdate={handleEmployeeUpdate}
+      />
     </div>
   );
 };
