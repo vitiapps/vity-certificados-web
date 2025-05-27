@@ -9,6 +9,50 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      certificaciones_historico: {
+        Row: {
+          created_at: string
+          detalles: Json | null
+          empleado_id: string
+          fecha_generacion: string
+          generado_por: string | null
+          id: string
+          nombre_empleado: string
+          numero_documento: string
+          tipo_certificacion: string
+        }
+        Insert: {
+          created_at?: string
+          detalles?: Json | null
+          empleado_id: string
+          fecha_generacion?: string
+          generado_por?: string | null
+          id?: string
+          nombre_empleado: string
+          numero_documento: string
+          tipo_certificacion: string
+        }
+        Update: {
+          created_at?: string
+          detalles?: Json | null
+          empleado_id?: string
+          fecha_generacion?: string
+          generado_por?: string | null
+          id?: string
+          nombre_empleado?: string
+          numero_documento?: string
+          tipo_certificacion?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificaciones_historico_empleado_id_fkey"
+            columns: ["empleado_id"]
+            isOneToOne: false
+            referencedRelation: "empleados"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       empleados: {
         Row: {
           cargo: string

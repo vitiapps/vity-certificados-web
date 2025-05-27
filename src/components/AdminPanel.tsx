@@ -3,13 +3,14 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Database, Download } from 'lucide-react';
+import { Upload, Database, Download, History } from 'lucide-react';
 import ExcelUploader from './ExcelUploader';
 import ExcelDownloader from './ExcelDownloader';
 import EmployeeList from './EmployeeList';
+import CertificateHistory from './CertificateHistory';
 
 const AdminPanel: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'upload' | 'download' | 'employees'>('upload');
+  const [activeTab, setActiveTab] = useState<'upload' | 'download' | 'employees' | 'history'>('upload');
   const { toast } = useToast();
 
   return (
@@ -48,11 +49,20 @@ const AdminPanel: React.FC = () => {
               <Button
                 variant={activeTab === 'employees' ? 'default' : 'ghost'}
                 onClick={() => setActiveTab('employees')}
-                className="flex items-center justify-center gap-2 text-xs sm:text-sm"
+                className="flex items-center justify-center gap-2 mb-1 sm:mb-0 text-xs sm:text-sm"
               >
                 <Database size={16} />
                 <span className="hidden sm:inline">Ver Empleados</span>
                 <span className="sm:hidden">Empleados</span>
+              </Button>
+              <Button
+                variant={activeTab === 'history' ? 'default' : 'ghost'}
+                onClick={() => setActiveTab('history')}
+                className="flex items-center justify-center gap-2 text-xs sm:text-sm"
+              >
+                <History size={16} />
+                <span className="hidden sm:inline">Historial</span>
+                <span className="sm:hidden">Historial</span>
               </Button>
             </div>
           </div>
@@ -61,6 +71,7 @@ const AdminPanel: React.FC = () => {
             {activeTab === 'download' && <ExcelDownloader />}
             {activeTab === 'upload' && <ExcelUploader />}
             {activeTab === 'employees' && <EmployeeList />}
+            {activeTab === 'history' && <CertificateHistory />}
           </CardContent>
         </Card>
       </div>

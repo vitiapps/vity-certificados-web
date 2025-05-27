@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Download, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CertificateGeneratorProps {
   employeeData: any;
@@ -50,7 +50,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
     setIsGenerating(true);
     
     // Simular generación del certificado
-    setTimeout(() => {
+    setTimeout(async () => {
       setIsGenerating(false);
       setIsGenerated(true);
       
@@ -61,12 +61,41 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
         estado: employeeData.estado,
         tipoConsulta: certificateType
       });
+
+      // Registrar en el historial
+      await saveCertificateToHistory();
       
       toast({
         title: "¡Certificado generado!",
         description: "Tu certificado está listo para descargar",
       });
     }, 2000);
+  };
+
+  const saveCertificateToHistory = async () => {
+    try {
+      const { error } = await supabase
+        .from('certificaciones_historico')
+        .insert({
+          empleado_id: employeeData.id,
+          nombre_empleado: employeeData.nombre,
+          numero_documento: employeeData.numero_documento,
+          tipo_certificacion: certificateType,
+          generado_por: 'Usuario Web',
+          detalles: {
+            empresa: employeeData.empresa,
+            cargo: employeeData.cargo,
+            estado: employeeData.estado,
+            sueldo: employeeData.sueldo
+          }
+        });
+
+      if (error) {
+        console.error('Error saving to history:', error);
+      }
+    } catch (error) {
+      console.error('Error saving certificate to history:', error);
+    }
   };
 
   const downloadCertificate = () => {
