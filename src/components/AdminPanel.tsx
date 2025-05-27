@@ -1,9 +1,9 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Database, Download, History } from 'lucide-react';
+import { Upload, Database, Download, History, LogOut } from 'lucide-react';
+import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import ExcelUploader from './ExcelUploader';
 import ExcelDownloader from './ExcelDownloader';
 import EmployeeList from './EmployeeList';
@@ -11,19 +11,45 @@ import CertificateHistory from './CertificateHistory';
 
 const AdminPanel: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'upload' | 'download' | 'employees' | 'history'>('upload');
+  const { admin, logout } = useAdminAuth();
   const { toast } = useToast();
+
+  const handleLogout = () => {
+    logout();
+    toast({
+      title: "Sesión cerrada",
+      description: "Has cerrado sesión correctamente",
+    });
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-vity-green via-vity-green-light to-vity-green p-4">
       <div className="container mx-auto max-w-6xl">
         <Card className="border-0 shadow-xl bg-white/95 backdrop-blur-sm">
           <CardHeader className="text-center pb-6">
-            <CardTitle className="text-2xl md:text-3xl font-bold text-gray-800">
-              Panel de Administrador
-            </CardTitle>
-            <p className="text-gray-600 mt-2 text-sm md:text-base">
-              Gestiona la información de empleados
-            </p>
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <CardTitle className="text-2xl md:text-3xl font-bold text-gray-800">
+                  Panel de Administrador
+                </CardTitle>
+                <p className="text-gray-600 mt-2 text-sm md:text-base">
+                  Gestiona la información de empleados
+                </p>
+                {admin && (
+                  <p className="text-sm text-gray-500 mt-1">
+                    Bienvenido, {admin.name}
+                  </p>
+                )}
+              </div>
+              <Button
+                variant="outline"
+                onClick={handleLogout}
+                className="flex items-center gap-2 text-red-600 border-red-200 hover:bg-red-50"
+              >
+                <LogOut size={16} />
+                Cerrar Sesión
+              </Button>
+            </div>
           </CardHeader>
           
           <div className="flex justify-center mb-6 px-4">
