@@ -51,33 +51,80 @@ const EditEmployeeDialog: React.FC<EditEmployeeDialogProps> = ({
     }));
   };
 
+  const formatDateForInput = (dateString: string | null): string => {
+    if (!dateString) return '';
+    // Si la fecha ya está en formato YYYY-MM-DD, la devolvemos tal como está
+    if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      return dateString;
+    }
+    // Si está en otro formato, intentamos convertirla
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+    return date.toISOString().split('T')[0];
+  };
+
   const handleSave = async () => {
     if (!employee || !formData) return;
 
+    // Validaciones básicas
+    if (!formData.nombre?.trim()) {
+      toast({
+        title: "Error",
+        description: "El nombre es requerido",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!formData.numero_documento?.trim()) {
+      toast({
+        title: "Error",
+        description: "El número de documento es requerido",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!formData.correo?.trim()) {
+      toast({
+        title: "Error",
+        description: "El correo es requerido",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
+      console.log('Datos a actualizar:', formData);
+      
+      const updateData = {
+        nombre: formData.nombre?.trim(),
+        numero_documento: formData.numero_documento?.trim(),
+        tipo_documento: formData.tipo_documento || 'CC',
+        correo: formData.correo?.trim(),
+        cargo: formData.cargo?.trim(),
+        empresa: formData.empresa?.trim(),
+        tipo_contrato: formData.tipo_contrato || 'Indefinido',
+        estado: formData.estado || 'Activo',
+        fecha_ingreso: formData.fecha_ingreso,
+        fecha_retiro: formData.fecha_retiro || null,
+        sueldo: formData.sueldo ? Number(formData.sueldo) : null,
+        updated_at: new Date().toISOString()
+      };
+
+      console.log('Datos finales para actualizar:', updateData);
+
       const { error } = await supabase
         .from('empleados')
-        .update({
-          nombre: formData.nombre,
-          numero_documento: formData.numero_documento,
-          tipo_documento: formData.tipo_documento,
-          correo: formData.correo,
-          cargo: formData.cargo,
-          empresa: formData.empresa,
-          tipo_contrato: formData.tipo_contrato,
-          estado: formData.estado,
-          fecha_ingreso: formData.fecha_ingreso,
-          fecha_retiro: formData.fecha_retiro,
-          sueldo: formData.sueldo ? Number(formData.sueldo) : null,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', employee.id);
 
       if (error) {
+        console.error('Error de Supabase:', error);
         toast({
           title: "Error",
-          description: "Error al actualizar el empleado",
+          description: `Error al actualizar el empleado: ${error.message}`,
           variant: "destructive"
         });
       } else {
@@ -89,9 +136,10 @@ const EditEmployeeDialog: React.FC<EditEmployeeDialogProps> = ({
         onClose();
       }
     } catch (error) {
+      console.error('Error inesperado:', error);
       toast({
         title: "Error",
-        description: "Error inesperado",
+        description: "Error inesperado al actualizar el empleado",
         variant: "destructive"
       });
     } finally {
@@ -197,7 +245,7 @@ const EditEmployeeDialog: React.FC<EditEmployeeDialogProps> = ({
             <label className="text-sm font-medium">Fecha Ingreso</label>
             <Input
               type="date"
-              value={formData.fecha_ingreso || ''}
+              value={formatDateForInput(formData.fecha_ingreso || null)}
               onChange={(e) => handleInputChange('fecha_ingreso', e.target.value)}
             />
           </div>
@@ -206,12 +254,12 @@ const EditEmployeeDialog: React.FC<EditEmployeeDialogProps> = ({
             <label className="text-sm font-medium">Fecha Retiro (opcional)</label>
             <Input
               type="date"
-              value={formData.fecha_retiro || ''}
+              value={formatDateForInput(formData.fecha_retiro)}
               onChange={(e) => handleInputChange('fecha_retiro', e.target.value || null)}
             />
           </div>
 
-          <div>
+          <div className="md:col-span-2">
             <label className="text-sm font-medium">Sueldo (opcional)</label>
             <Input
               type="number"
