@@ -6,6 +6,7 @@ interface AdminUser {
   id: string;
   email: string;
   name: string;
+  role: 'super_admin' | 'admin';
 }
 
 interface AdminAuthContextType {
@@ -13,6 +14,7 @@ interface AdminAuthContextType {
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   isLoading: boolean;
+  createAdmin: (email: string, password: string, name: string, role?: 'admin' | 'super_admin') => Promise<{ success: boolean; error?: string; adminId?: string }>;
 }
 
 const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefined);
@@ -51,7 +53,8 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         const adminUser = {
           id: result.id,
           email: result.email,
-          name: result.name
+          name: result.name,
+          role: result.role
         };
         
         setAdmin(adminUser);
@@ -65,13 +68,43 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
+  const createAdmin = async (email: string, password: string, name: string, role: 'admin' | 'super_admin' = 'admin') => {
+    if (!admin) {
+      return { success: false, error: 'No tienes sesión activa' };
+    }
+
+    try {
+      const { data, error } = await supabase.rpc('create_admin', {
+        p_email: email,
+        p_password: password,
+        p_name: name,
+        p_created_by_email: admin.email,
+        p_role: role
+      });
+
+      if (error) {
+        return { success: false, error: 'Error de conexión' };
+      }
+
+      const result = data?.[0];
+      
+      if (result?.success) {
+        return { success: true, adminId: result.admin_id };
+      } else {
+        return { success: false, error: result?.message || 'Error al crear administrador' };
+      }
+    } catch (error) {
+      return { success: false, error: 'Error inesperado' };
+    }
+  };
+
   const logout = () => {
     setAdmin(null);
     localStorage.removeItem('admin_session');
   };
 
   return (
-    <AdminAuthContext.Provider value={{ admin, login, logout, isLoading }}>
+    <AdminAuthContext.Provider value={{ admin, login, logout, isLoading, createAdmin }}>
       {children}
     </AdminAuthContext.Provider>
   );

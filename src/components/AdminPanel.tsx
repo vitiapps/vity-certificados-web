@@ -1,16 +1,18 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Database, Download, History, LogOut } from 'lucide-react';
+import { Upload, Database, Download, History, LogOut, UserPlus } from 'lucide-react';
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import ExcelUploader from './ExcelUploader';
 import ExcelDownloader from './ExcelDownloader';
 import EmployeeList from './EmployeeList';
 import CertificateHistory from './CertificateHistory';
+import CreateAdminForm from './CreateAdminForm';
 
 const AdminPanel: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'upload' | 'download' | 'employees' | 'history'>('upload');
+  const [activeTab, setActiveTab] = useState<'upload' | 'download' | 'employees' | 'history' | 'create-admin'>('upload');
   const { admin, logout } = useAdminAuth();
   const { toast } = useToast();
 
@@ -37,7 +39,7 @@ const AdminPanel: React.FC = () => {
                 </p>
                 {admin && (
                   <p className="text-sm text-gray-500 mt-1">
-                    Bienvenido, {admin.name}
+                    Bienvenido, {admin.name} ({admin.role === 'super_admin' ? 'Super Administrador' : 'Administrador'})
                   </p>
                 )}
               </div>
@@ -84,12 +86,23 @@ const AdminPanel: React.FC = () => {
               <Button
                 variant={activeTab === 'history' ? 'default' : 'ghost'}
                 onClick={() => setActiveTab('history')}
-                className="flex items-center justify-center gap-2 text-xs sm:text-sm"
+                className="flex items-center justify-center gap-2 mb-1 sm:mb-0 text-xs sm:text-sm"
               >
                 <History size={16} />
                 <span className="hidden sm:inline">Historial</span>
                 <span className="sm:hidden">Historial</span>
               </Button>
+              {admin?.role === 'super_admin' && (
+                <Button
+                  variant={activeTab === 'create-admin' ? 'default' : 'ghost'}
+                  onClick={() => setActiveTab('create-admin')}
+                  className="flex items-center justify-center gap-2 text-xs sm:text-sm"
+                >
+                  <UserPlus size={16} />
+                  <span className="hidden sm:inline">Crear Admin</span>
+                  <span className="sm:hidden">Admin</span>
+                </Button>
+              )}
             </div>
           </div>
 
@@ -98,6 +111,7 @@ const AdminPanel: React.FC = () => {
             {activeTab === 'upload' && <ExcelUploader />}
             {activeTab === 'employees' && <EmployeeList />}
             {activeTab === 'history' && <CertificateHistory />}
+            {activeTab === 'create-admin' && <CreateAdminForm />}
           </CardContent>
         </Card>
       </div>
