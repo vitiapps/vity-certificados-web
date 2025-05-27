@@ -9,200 +9,128 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      administrators: {
+      admins: {
         Row: {
-          created_at: string | null
+          created_at: string
           email: string
           id: string
           name: string
-          role: string | null
+          password_hash: string
+          role: Database["public"]["Enums"]["admin_role"]
+          updated_at: string
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           email: string
           id?: string
           name: string
-          role?: string | null
+          password_hash: string
+          role?: Database["public"]["Enums"]["admin_role"]
+          updated_at?: string
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           email?: string
           id?: string
           name?: string
-          role?: string | null
+          password_hash?: string
+          role?: Database["public"]["Enums"]["admin_role"]
+          updated_at?: string
         }
         Relationships: []
       }
-      certificates: {
+      certificaciones_historico: {
         Row: {
-          certificate_number: string
-          certificate_type: string
-          created_at: string | null
-          employee_id: string | null
-          employment_record_id: string | null
-          generated_by_cedula: string
+          created_at: string
+          detalles: Json | null
+          empleado_id: string
+          fecha_generacion: string
+          generado_por: string | null
           id: string
-          issue_date: string | null
-          purpose: string | null
+          nombre_empleado: string
+          numero_documento: string
+          tipo_certificacion: string
         }
         Insert: {
-          certificate_number: string
-          certificate_type: string
-          created_at?: string | null
-          employee_id?: string | null
-          employment_record_id?: string | null
-          generated_by_cedula: string
+          created_at?: string
+          detalles?: Json | null
+          empleado_id: string
+          fecha_generacion?: string
+          generado_por?: string | null
           id?: string
-          issue_date?: string | null
-          purpose?: string | null
+          nombre_empleado: string
+          numero_documento: string
+          tipo_certificacion: string
         }
         Update: {
-          certificate_number?: string
-          certificate_type?: string
-          created_at?: string | null
-          employee_id?: string | null
-          employment_record_id?: string | null
-          generated_by_cedula?: string
+          created_at?: string
+          detalles?: Json | null
+          empleado_id?: string
+          fecha_generacion?: string
+          generado_por?: string | null
           id?: string
-          issue_date?: string | null
-          purpose?: string | null
+          nombre_empleado?: string
+          numero_documento?: string
+          tipo_certificacion?: string
         }
         Relationships: [
           {
-            foreignKeyName: "certificates_employee_id_fkey"
-            columns: ["employee_id"]
+            foreignKeyName: "certificaciones_historico_empleado_id_fkey"
+            columns: ["empleado_id"]
             isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "certificates_employment_record_id_fkey"
-            columns: ["employment_record_id"]
-            isOneToOne: false
-            referencedRelation: "employment_records"
+            referencedRelation: "empleados"
             referencedColumns: ["id"]
           },
         ]
       }
-      employees: {
+      empleados: {
         Row: {
-          cedula: string
-          created_at: string | null
-          department: string | null
-          email: string
-          first_name: string
+          cargo: string
+          correo: string
+          created_at: string
+          empresa: string
+          estado: string
+          fecha_ingreso: string
+          fecha_retiro: string | null
           id: string
-          last_name: string
-          phone: string | null
-          position: string | null
-          status: string | null
-          updated_at: string | null
+          nombre: string
+          numero_documento: string
+          sueldo: number | null
+          tipo_contrato: string
+          tipo_documento: string
+          updated_at: string
         }
         Insert: {
-          cedula: string
-          created_at?: string | null
-          department?: string | null
-          email: string
-          first_name: string
+          cargo: string
+          correo: string
+          created_at?: string
+          empresa: string
+          estado: string
+          fecha_ingreso: string
+          fecha_retiro?: string | null
           id?: string
-          last_name: string
-          phone?: string | null
-          position?: string | null
-          status?: string | null
-          updated_at?: string | null
+          nombre: string
+          numero_documento: string
+          sueldo?: number | null
+          tipo_contrato: string
+          tipo_documento?: string
+          updated_at?: string
         }
         Update: {
-          cedula?: string
-          created_at?: string | null
-          department?: string | null
-          email?: string
-          first_name?: string
+          cargo?: string
+          correo?: string
+          created_at?: string
+          empresa?: string
+          estado?: string
+          fecha_ingreso?: string
+          fecha_retiro?: string | null
           id?: string
-          last_name?: string
-          phone?: string | null
-          position?: string | null
-          status?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      employment_records: {
-        Row: {
-          contract_type: string | null
-          created_at: string | null
-          department: string
-          employee_id: string | null
-          end_date: string | null
-          id: string
-          position: string
-          salary: number | null
-          start_date: string
-          status: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          contract_type?: string | null
-          created_at?: string | null
-          department: string
-          employee_id?: string | null
-          end_date?: string | null
-          id?: string
-          position: string
-          salary?: number | null
-          start_date: string
-          status?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          contract_type?: string | null
-          created_at?: string | null
-          department?: string
-          employee_id?: string | null
-          end_date?: string | null
-          id?: string
-          position?: string
-          salary?: number | null
-          start_date?: string
-          status?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "employment_records_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      security_codes: {
-        Row: {
-          cedula: string
-          code: string
-          created_at: string | null
-          email: string
-          expires_at: string
-          id: string
-          used: boolean | null
-        }
-        Insert: {
-          cedula: string
-          code: string
-          created_at?: string | null
-          email: string
-          expires_at: string
-          id?: string
-          used?: boolean | null
-        }
-        Update: {
-          cedula?: string
-          code?: string
-          created_at?: string | null
-          email?: string
-          expires_at?: string
-          id?: string
-          used?: boolean | null
+          nombre?: string
+          numero_documento?: string
+          sueldo?: number | null
+          tipo_contrato?: string
+          tipo_documento?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -211,13 +139,37 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      clean_expired_codes: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
+      authenticate_admin: {
+        Args: { p_email: string; p_password: string }
+        Returns: {
+          id: string
+          email: string
+          name: string
+          role: Database["public"]["Enums"]["admin_role"]
+          success: boolean
+        }[]
+      }
+      create_admin: {
+        Args: {
+          p_email: string
+          p_password: string
+          p_name: string
+          p_created_by_email: string
+          p_role?: Database["public"]["Enums"]["admin_role"]
+        }
+        Returns: {
+          success: boolean
+          message: string
+          admin_id: string
+        }[]
+      }
+      is_super_admin: {
+        Args: { admin_email: string }
+        Returns: boolean
       }
     }
     Enums: {
-      [_ in never]: never
+      admin_role: "super_admin" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -332,6 +284,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      admin_role: ["super_admin", "admin"],
+    },
   },
 } as const
