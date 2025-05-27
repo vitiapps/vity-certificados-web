@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
@@ -33,7 +34,7 @@ const Header: React.FC<HeaderProps> = ({ showBackButton, onBack, title }) => {
             />
             <div>
               <h1 className="text-xl font-bold text-white">
-                {title || 'Certificación Laboral Vity'}
+                {title || 'Certificado Laboral'}
               </h1>
               <p className="text-white/80 text-sm">Genera tu certificado de manera rápida y segura</p>
             </div>

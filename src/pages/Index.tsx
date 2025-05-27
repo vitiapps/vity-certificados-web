@@ -84,14 +84,14 @@ const Index = () => {
         )}
       </main>
       
-      {/* Footer informativo */}
+      {/* Footer con información de contacto */}
       <footer className="bg-white/10 backdrop-blur-sm mt-12">
         <div className="container mx-auto px-4 py-6 text-center">
           <p className="text-white/90 text-sm">
-            💡 <strong>Próximos pasos:</strong> Conecta con Google Sheets para la base de datos automática
+            📞 <strong>Contáctanos:</strong> certificados@vity.com | +57 (1) 234-5678
           </p>
           <p className="text-white/70 text-xs mt-2">
-            Esta es una versión de demostración • Los datos mostrados son de ejemplo
+            Horario de atención: Lunes a Viernes 8:00 AM - 6:00 PM
           </p>
         </div>
       </footer>
