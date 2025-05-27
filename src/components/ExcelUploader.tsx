@@ -1,387 +1,307 @@
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { Upload, FileSpreadsheet, CheckCircle, AlertCircle } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { Upload, File } from 'lucide-react';
 
-interface EmployeeData {
-  nombre: string;
-  numero_documento: string;
-  tipo_documento: string;
-  correo: string;
-  cargo: string;
-  empresa: string;
-  tipo_contrato: string;
-  fecha_ingreso: string;
-  fecha_retiro?: string;
-  estado: string;
-  sueldo?: number;
+interface UploadStatus {
+  isUploading: boolean;
+  progress: number;
+  currentStep: string;
+  success: boolean;
+  error: string | null;
 }
 
 const ExcelUploader: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [preview, setPreview] = useState<EmployeeData[]>([]);
+  const [uploadStatus, setUploadStatus] = useState<UploadStatus>({
+    isUploading: false,
+    progress: 0,
+    currentStep: '',
+    success: false,
+    error: null
+  });
   const { toast } = useToast();
 
-  const formatDateForDB = (dateValue: any): string | null => {
-    if (!dateValue || dateValue === '') return null;
-    
-    try {
-      let date: Date;
-      
-      // Si es un número de serie de Excel
-      if (typeof dateValue === 'number') {
-        // Excel date serial number conversion
-        date = new Date((dateValue - 25569) * 86400 * 1000);
-      } 
-      // Si es una fecha de JavaScript
-      else if (dateValue instanceof Date) {
-        date = dateValue;
-      } 
-      // Si es un string, intentar parsearlo
-      else if (typeof dateValue === 'string') {
-        // Intentar diferentes formatos
-        const cleanDate = dateValue.trim();
-        if (cleanDate === '') return null;
-        
-        // Formato DD/MM/YYYY o DD-MM-YYYY
-        if (cleanDate.match(/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/)) {
-          const parts = cleanDate.split(/[\/\-]/);
-          date = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
-        }
-        // Formato YYYY-MM-DD
-        else if (cleanDate.match(/^\d{4}-\d{1,2}-\d{1,2}$/)) {
-          date = new Date(cleanDate);
-        }
-        // Otros formatos
-        else {
-          date = new Date(cleanDate);
-        }
-      } 
-      else {
-        return null;
-      }
-      
-      // Verificar que la fecha es válida
-      if (isNaN(date.getTime())) {
-        console.log('Invalid date:', dateValue);
-        return null;
-      }
-      
-      // Formatear como YYYY-MM-DD para PostgreSQL
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      
-      return `${year}-${month}-${day}`;
-    } catch (error) {
-      console.error('Error formatting date:', dateValue, error);
-      return null;
+  const resetUploadStatus = () => {
+    setUploadStatus({
+      isUploading: false,
+      progress: 0,
+      currentStep: '',
+      success: false,
+      error: null
+    });
+  };
+
+  const updateProgress = (progress: number, step: string) => {
+    setUploadStatus(prev => ({
+      ...prev,
+      progress,
+      currentStep: step
+    }));
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0];
+    if (selectedFile) {
+      resetUploadStatus();
+      setFile(selectedFile);
     }
   };
 
-  const mapExcelRowToEmployee = (row: any): EmployeeData | null => {
-    console.log('Raw row data:', row);
-    
-    // Try different possible column names
-    const nombre = row['Nombre'] || row['nombre'] || row['NOMBRE'] || row['Name'] || '';
-    const numero_documento = String(row['Número Documento'] || row['numero_documento'] || row['NUMERO_DOCUMENTO'] || row['Cedula'] || row['cedula'] || row['CEDULA'] || row['Document'] || '').trim();
-    const correo = row['Correo'] || row['correo'] || row['CORREO'] || row['Email'] || row['email'] || row['EMAIL'] || '';
-    const cargo = row['Cargo'] || row['cargo'] || row['CARGO'] || row['Position'] || '';
-    
-    // Skip rows with missing critical data
-    if (!nombre || !numero_documento) {
-      console.log('Skipping row due to missing critical data:', { nombre, numero_documento });
-      return null;
-    }
+  const processExcelFile = useCallback(async (file: File) => {
+    return new Promise<any[]>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet);
+          resolve(jsonData);
+        } catch (error) {
+          reject(error);
+        }
+      };
+      reader.onerror = () => reject(new Error('Error al leer el archivo'));
+      reader.readAsArrayBuffer(file);
+    });
+  }, []);
 
-    // Format dates
-    const fechaIngresoRaw = row['Fecha Ingreso'] || row['fecha_ingreso'] || row['FECHA_INGRESO'] || row['Fecha de Ingreso'] || '';
-    const fechaRetiroRaw = row['Fecha Retiro'] || row['fecha_retiro'] || row['FECHA_RETIRO'] || row['Fecha de Retiro'] || '';
-    
-    const fechaIngreso = formatDateForDB(fechaIngresoRaw);
-    const fechaRetiro = formatDateForDB(fechaRetiroRaw);
-
-    // If fecha_ingreso is required and couldn't be formatted, skip the row
-    if (!fechaIngreso) {
-      console.log('Skipping row due to invalid fecha_ingreso:', fechaIngresoRaw);
-      return null;
-    }
-
-    return {
-      nombre: nombre.trim(),
-      numero_documento: numero_documento,
-      tipo_documento: row['Tipo Documento'] || row['tipo_documento'] || row['TIPO_DOCUMENTO'] || 'CC',
-      correo: correo.trim(),
-      cargo: cargo.trim(),
-      empresa: row['Empresa'] || row['empresa'] || row['EMPRESA'] || 'Vity',
-      tipo_contrato: row['Tipo Contrato'] || row['tipo_contrato'] || row['TIPO_CONTRATO'] || 'Indefinido',
-      fecha_ingreso: fechaIngreso,
-      fecha_retiro: fechaRetiro || undefined,
-      estado: row['Estado'] || row['estado'] || row['ESTADO'] || 'Activo',
-      sueldo: row['Sueldo'] || row['sueldo'] || row['SUELDO'] || null
-    };
-  };
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (!selectedFile) return;
-
-    if (!selectedFile.name.match(/\.(xlsx|xls)$/)) {
+  const uploadFile = async () => {
+    if (!file) {
       toast({
         title: "Error",
-        description: "Por favor selecciona un archivo Excel válido (.xlsx o .xls)",
+        description: "Por favor selecciona un archivo",
         variant: "destructive"
       });
       return;
     }
 
-    setFile(selectedFile);
-    
-    // Leer y mostrar preview del archivo
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const fileData = new Uint8Array(event.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(fileData, { type: 'array', cellDates: true, cellNF: false, cellText: false });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        
-        // Convert to JSON with header row detection
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
-          header: 1,
-          defval: '',
-          blankrows: false
-        }) as any[][];
-        
-        console.log('Raw Excel data:', jsonData);
+    setUploadStatus({
+      isUploading: true,
+      progress: 0,
+      currentStep: 'Iniciando carga...',
+      success: false,
+      error: null
+    });
 
-        if (jsonData.length < 2) {
-          toast({
-            title: "Error",
-            description: "El archivo debe contener al menos una fila de encabezados y una fila de datos",
-            variant: "destructive"
-          });
-          return;
-        }
-
-        // Get headers (first row)
-        const headers = jsonData[0];
-        console.log('Headers found:', headers);
-
-        // Convert rows to objects using headers
-        const rowObjects = jsonData.slice(1).map(row => {
-          const obj: any = {};
-          headers.forEach((header: string, index: number) => {
-            obj[header] = row[index] || '';
-          });
-          return obj;
-        });
-
-        console.log('Row objects:', rowObjects);
-
-        // Map to employee data
-        const mappedData: EmployeeData[] = rowObjects
-          .map(mapExcelRowToEmployee)
-          .filter((emp): emp is EmployeeData => emp !== null);
-
-        console.log('Mapped employee data:', mappedData);
-
-        setPreview(mappedData.slice(0, 5)); // Mostrar solo los primeros 5 para preview
-        
-        toast({
-          title: "Archivo cargado",
-          description: `Se encontraron ${mappedData.length} registros válidos. Revisa el preview antes de guardar.`
-        });
-      } catch (error) {
-        console.error('Error reading file:', error);
-        toast({
-          title: "Error",
-          description: "No se pudo leer el archivo Excel. Verifica el formato.",
-          variant: "destructive"
-        });
-      }
-    };
-    reader.readAsArrayBuffer(selectedFile);
-  };
-
-  const handleUpload = async () => {
-    if (!file) return;
-
-    setIsLoading(true);
-    
     try {
-      const reader = new FileReader();
-      reader.onload = async (event) => {
-        try {
-          const uploadData = new Uint8Array(event.target?.result as ArrayBuffer);
-          const workbook = XLSX.read(uploadData, { type: 'array', cellDates: true, cellNF: false, cellText: false });
-          const sheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[sheetName];
-          
-          // Convert to JSON with header row detection
-          const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
-            header: 1,
-            defval: '',
-            blankrows: false
-          }) as any[][];
+      updateProgress(10, 'Leyendo archivo Excel...');
+      await new Promise(resolve => setTimeout(resolve, 500));
 
-          // Get headers and convert to objects
-          const headers = jsonData[0];
-          const rowObjects = jsonData.slice(1).map(row => {
-            const obj: any = {};
-            headers.forEach((header: string, index: number) => {
-              obj[header] = row[index] || '';
-            });
-            return obj;
+      const jsonData = await processExcelFile(file);
+      
+      if (!jsonData || jsonData.length === 0) {
+        throw new Error('El archivo está vacío o no contiene datos válidos');
+      }
+
+      updateProgress(30, 'Validando datos...');
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const validData = jsonData.filter(row => {
+        const requiredFields = ['nombre', 'numero_documento', 'correo'];
+        return requiredFields.every(field => row[field] && row[field].toString().trim() !== '');
+      });
+
+      if (validData.length === 0) {
+        throw new Error('No se encontraron registros válidos en el archivo');
+      }
+
+      updateProgress(50, 'Preparando datos para insertar...');
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      const batchSize = 50;
+      const totalBatches = Math.ceil(validData.length / batchSize);
+      let processedBatches = 0;
+
+      for (let i = 0; i < validData.length; i += batchSize) {
+        const batch = validData.slice(i, i + batchSize);
+        const formattedBatch = batch.map(row => ({
+          nombre: row.nombre?.toString().trim() || '',
+          numero_documento: row.numero_documento?.toString().trim() || '',
+          tipo_documento: row.tipo_documento?.toString().trim() || 'CC',
+          correo: row.correo?.toString().trim() || '',
+          cargo: row.cargo?.toString().trim() || '',
+          empresa: row.empresa?.toString().trim() || '',
+          tipo_contrato: row.tipo_contrato?.toString().trim() || '',
+          estado: row.estado?.toString().trim() || 'Activo',
+          fecha_ingreso: row.fecha_ingreso || new Date().toISOString().split('T')[0],
+          fecha_retiro: row.fecha_retiro || null,
+          sueldo: row.sueldo ? parseFloat(row.sueldo.toString()) : null
+        }));
+
+        updateProgress(
+          50 + (processedBatches / totalBatches) * 40,
+          `Insertando lote ${processedBatches + 1} de ${totalBatches}...`
+        );
+
+        const { error } = await supabase
+          .from('empleados')
+          .upsert(formattedBatch, {
+            onConflict: 'numero_documento',
+            ignoreDuplicates: false
           });
 
-          // Map and filter employee data
-          const employeesData: EmployeeData[] = rowObjects
-            .map(mapExcelRowToEmployee)
-            .filter((emp): emp is EmployeeData => emp !== null);
-
-          console.log('Final datos a insertar:', employeesData);
-
-          if (employeesData.length === 0) {
-            toast({
-              title: "Error",
-              description: "No se encontraron registros válidos en el archivo",
-              variant: "destructive"
-            });
-            return;
-          }
-
-          // Insertar en la base de datos usando upsert para actualizar existentes
-          const { data: insertResult, error } = await supabase
-            .from('empleados')
-            .upsert(employeesData, { 
-              onConflict: 'numero_documento',
-              ignoreDuplicates: false 
-            });
-
-          if (error) {
-            console.error('Error inserting data:', error);
-            toast({
-              title: "Error",
-              description: `Error al guardar los datos: ${error.message}`,
-              variant: "destructive"
-            });
-          } else {
-            toast({
-              title: "¡Éxito!",
-              description: `Se procesaron ${employeesData.length} empleados correctamente.`
-            });
-            setFile(null);
-            setPreview([]);
-            // Reset input
-            const input = document.getElementById('excel-file') as HTMLInputElement;
-            if (input) input.value = '';
-          }
-        } catch (error) {
-          console.error('Processing error:', error);
-          toast({
-            title: "Error",
-            description: "Error al procesar el archivo. Verifica el formato.",
-            variant: "destructive"
-          });
+        if (error) {
+          throw error;
         }
-      };
-      reader.readAsArrayBuffer(file);
+
+        processedBatches++;
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+
+      updateProgress(100, 'Carga completada exitosamente');
+      
+      setUploadStatus({
+        isUploading: false,
+        progress: 100,
+        currentStep: `${validData.length} empleados cargados correctamente`,
+        success: true,
+        error: null
+      });
+
+      toast({
+        title: "Éxito",
+        description: `Se cargaron ${validData.length} empleados correctamente`
+      });
+
+      // Reset form after successful upload
+      setTimeout(() => {
+        setFile(null);
+        resetUploadStatus();
+        const fileInput = document.getElementById('excel-file') as HTMLInputElement;
+        if (fileInput) fileInput.value = '';
+      }, 3000);
+
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('Error uploading file:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      
+      setUploadStatus({
+        isUploading: false,
+        progress: 0,
+        currentStep: '',
+        success: false,
+        error: errorMessage
+      });
+
       toast({
         title: "Error",
-        description: "Error al cargar el archivo.",
+        description: `Error al cargar el archivo: ${errorMessage}`,
         variant: "destructive"
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
   return (
     <div className="space-y-6">
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h3 className="font-semibold text-blue-800 mb-2">Formato del Excel</h3>
-        <p className="text-blue-600 text-sm mb-2">
-          El archivo debe contener las siguientes columnas (pueden estar en español o inglés):
-        </p>
-        <div className="grid grid-cols-2 gap-2 text-sm text-blue-600">
-          <span>• Nombre / Name</span>
-          <span>• Número Documento / Cedula</span>
-          <span>• Correo / Email</span>
-          <span>• Cargo / Position</span>
-          <span>• Empresa</span>
-          <span>• Tipo Contrato</span>
-          <span>• Fecha Ingreso (DD/MM/YYYY)</span>
-          <span>• Estado</span>
-        </div>
-        <p className="text-blue-600 text-xs mt-2">
-          <strong>Importante:</strong> La primera fila debe contener los encabezados de las columnas.
-          Las fechas deben estar en formato DD/MM/YYYY o ser fechas válidas de Excel.
-        </p>
-      </div>
-
-      <div className="space-y-4">
-        <Label htmlFor="excel-file" className="text-gray-700 font-medium">
-          Seleccionar archivo Excel
-        </Label>
-        <Input
-          id="excel-file"
-          type="file"
-          accept=".xlsx,.xls"
-          onChange={handleFileChange}
-          className="h-12"
-          disabled={isLoading}
-        />
-      </div>
-
-      {preview.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="font-semibold text-gray-800">Preview (primeros 5 registros):</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse border border-gray-300 text-sm">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="border border-gray-300 p-2">Nombre</th>
-                  <th className="border border-gray-300 p-2">Documento</th>
-                  <th className="border border-gray-300 p-2">Correo</th>
-                  <th className="border border-gray-300 p-2">Cargo</th>
-                  <th className="border border-gray-300 p-2">Fecha Ingreso</th>
-                </tr>
-              </thead>
-              <tbody>
-                {preview.map((emp, index) => (
-                  <tr key={index}>
-                    <td className="border border-gray-300 p-2">{emp.nombre}</td>
-                    <td className="border border-gray-300 p-2">{emp.numero_documento}</td>
-                    <td className="border border-gray-300 p-2">{emp.correo}</td>
-                    <td className="border border-gray-300 p-2">{emp.cargo}</td>
-                    <td className="border border-gray-300 p-2">{emp.fecha_ingreso}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
+            <Upload className="h-5 w-5" />
+            Cargar Archivo Excel
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <label htmlFor="excel-file" className="block text-sm font-medium text-gray-700">
+              Seleccionar archivo Excel (.xlsx, .xls)
+            </label>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1">
+                <Input
+                  id="excel-file"
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={handleFileChange}
+                  disabled={uploadStatus.isUploading}
+                  className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-vity-green file:text-white hover:file:bg-vity-green-dark"
+                />
+              </div>
+              <Button
+                onClick={uploadFile}
+                disabled={!file || uploadStatus.isUploading}
+                className="bg-vity-green hover:bg-vity-green-dark flex items-center gap-2 whitespace-nowrap"
+              >
+                <FileSpreadsheet className="h-4 w-4" />
+                {uploadStatus.isUploading ? 'Cargando...' : 'Subir Archivo'}
+              </Button>
+            </div>
           </div>
-        </div>
-      )}
 
-      {file && (
-        <Button 
-          onClick={handleUpload}
-          disabled={isLoading}
-          className="w-full h-12 bg-vity-green hover:bg-vity-green-dark text-white font-semibold"
-        >
-          {isLoading ? 'Procesando...' : 'Guardar Empleados'}
-          <Upload className="ml-2" size={16} />
-        </Button>
-      )}
+          {file && !uploadStatus.isUploading && !uploadStatus.success && (
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+              <p className="text-sm text-blue-800">
+                <strong>Archivo seleccionado:</strong> {file.name}
+              </p>
+              <p className="text-xs text-blue-600 mt-1">
+                Tamaño: {(file.size / 1024 / 1024).toFixed(2)} MB
+              </p>
+            </div>
+          )}
+
+          {uploadStatus.isUploading && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-vity-green border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-sm text-gray-600">{uploadStatus.currentStep}</span>
+              </div>
+              <Progress value={uploadStatus.progress} className="w-full" />
+              <p className="text-xs text-gray-500 text-center">
+                {uploadStatus.progress.toFixed(0)}% completado
+              </p>
+            </div>
+          )}
+
+          {uploadStatus.success && (
+            <div className="p-3 bg-green-50 border border-green-200 rounded-md flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              <p className="text-sm text-green-800">{uploadStatus.currentStep}</p>
+            </div>
+          )}
+
+          {uploadStatus.error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-md flex items-start gap-2">
+              <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm text-red-800 font-medium">Error en la carga</p>
+                <p className="text-xs text-red-600 mt-1">{uploadStatus.error}</p>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Formato del Archivo</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-sm text-gray-600 space-y-2">
+            <p><strong>Columnas requeridas:</strong></p>
+            <ul className="list-disc list-inside space-y-1 ml-4">
+              <li>nombre (obligatorio)</li>
+              <li>numero_documento (obligatorio)</li>
+              <li>correo (obligatorio)</li>
+              <li>tipo_documento (opcional, por defecto: CC)</li>
+              <li>cargo (opcional)</li>
+              <li>empresa (opcional)</li>
+              <li>tipo_contrato (opcional)</li>
+              <li>estado (opcional, por defecto: Activo)</li>
+              <li>fecha_ingreso (opcional, formato: YYYY-MM-DD)</li>
+              <li>fecha_retiro (opcional, formato: YYYY-MM-DD)</li>
+              <li>sueldo (opcional, numérico)</li>
+            </ul>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
