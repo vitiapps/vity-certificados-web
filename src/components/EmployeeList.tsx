@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -125,6 +124,20 @@ const EmployeeList: React.FC = () => {
     fetchEmployees();
   };
 
+  const formatCurrency = (amount: number | null): string => {
+    if (amount === null) return 'N/A';
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0
+    }).format(amount);
+  };
+
+  const formatDate = (dateString: string | null): string => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('es-CO');
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -153,12 +166,16 @@ const EmployeeList: React.FC = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Nombre</TableHead>
+                <TableHead>Tipo Doc.</TableHead>
                 <TableHead>Documento</TableHead>
                 <TableHead>Correo</TableHead>
                 <TableHead>Cargo</TableHead>
                 <TableHead>Empresa</TableHead>
+                <TableHead>Tipo Contrato</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead>Fecha Ingreso</TableHead>
+                <TableHead>Fecha Retiro</TableHead>
+                <TableHead>Sueldo</TableHead>
                 <TableHead>Acciones</TableHead>
               </TableRow>
             </TableHeader>
@@ -166,10 +183,12 @@ const EmployeeList: React.FC = () => {
               {filteredEmployees.map((employee) => (
                 <TableRow key={employee.id}>
                   <TableCell className="font-medium">{employee.nombre}</TableCell>
+                  <TableCell>{employee.tipo_documento}</TableCell>
                   <TableCell>{employee.numero_documento}</TableCell>
                   <TableCell>{employee.correo}</TableCell>
                   <TableCell>{employee.cargo}</TableCell>
                   <TableCell>{employee.empresa}</TableCell>
+                  <TableCell>{employee.tipo_contrato}</TableCell>
                   <TableCell>
                     <span className={`px-2 py-1 rounded text-xs ${
                       employee.estado === 'Activo' 
@@ -179,7 +198,9 @@ const EmployeeList: React.FC = () => {
                       {employee.estado}
                     </span>
                   </TableCell>
-                  <TableCell>{employee.fecha_ingreso}</TableCell>
+                  <TableCell>{formatDate(employee.fecha_ingreso)}</TableCell>
+                  <TableCell>{formatDate(employee.fecha_retiro)}</TableCell>
+                  <TableCell>{formatCurrency(employee.sueldo)}</TableCell>
                   <TableCell>
                     <div className="flex gap-2">
                       <Button
