@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,6 +22,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
 }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGenerated, setIsGenerated] = useState(false);
+  const [verificationCode, setVerificationCode] = useState('');
   const { toast } = useToast();
 
   const certificateTypeNames = {
@@ -49,6 +51,10 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
   const generateCertificate = async () => {
     setIsGenerating(true);
     
+    // Generar código de verificación
+    const generatedCode = `VTY-${employeeData.numero_documento}-${Date.now().toString().slice(-6)}`;
+    setVerificationCode(generatedCode);
+    
     // Simular generación del certificado
     setTimeout(async () => {
       setIsGenerating(false);
@@ -59,11 +65,12 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
         nombre: employeeData.nombre,
         empresa: employeeData.empresa,
         estado: employeeData.estado,
-        tipoConsulta: certificateType
+        tipoConsulta: certificateType,
+        codigo: generatedCode
       });
 
-      // Registrar en el historial
-      await saveCertificateToHistory();
+      // Registrar en el historial con el código de verificación
+      await saveCertificateToHistory(generatedCode);
       
       toast({
         title: "¡Certificado generado!",
@@ -72,7 +79,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
     }, 2000);
   };
 
-  const saveCertificateToHistory = async () => {
+  const saveCertificateToHistory = async (code: string) => {
     try {
       const { error } = await supabase
         .from('certificaciones_historico')
@@ -86,7 +93,8 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
             empresa: employeeData.empresa,
             cargo: employeeData.cargo,
             estado: employeeData.estado,
-            sueldo: employeeData.sueldo
+            sueldo: employeeData.sueldo,
+            codigo_verificacion: code
           }
         });
 
@@ -137,7 +145,6 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
   const generateCertificateHTML = () => {
     const certificateContent = getCertificateContent();
     const currentDate = new Date().toLocaleDateString('es-ES');
-    const verificationCode = `VTY-${employeeData.numero_documento}-${Date.now().toString().slice(-6)}`;
 
     return `
 <!DOCTYPE html>
@@ -315,7 +322,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
               {/* Pie del certificado */}
               <div className="text-center text-sm text-gray-600 border-t pt-6">
                 <p>Este certificado es válido con firma digital y código de verificación</p>
-                <p className="font-mono text-xs mt-2">Código: VTY-{employeeData.numero_documento}-{Date.now().toString().slice(-6)}</p>
+                <p className="font-mono text-xs mt-2">Código: {verificationCode}</p>
               </div>
             </div>
           )}

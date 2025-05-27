@@ -6,7 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Download, Calendar, FileText } from 'lucide-react';
+import { Eye, Download, Calendar, FileText, Hash } from 'lucide-react';
 
 interface CertificateHistoryRecord {
   id: string;
@@ -36,7 +36,8 @@ const CertificateHistory: React.FC = () => {
     const filtered = records.filter(record => 
       record.nombre_empleado.toLowerCase().includes(searchTerm.toLowerCase()) ||
       record.numero_documento.includes(searchTerm) ||
-      record.tipo_certificacion.toLowerCase().includes(searchTerm.toLowerCase())
+      record.tipo_certificacion.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (record.detalles?.codigo_verificacion && record.detalles.codigo_verificacion.toLowerCase().includes(searchTerm.toLowerCase()))
     );
     setFilteredRecords(filtered);
   }, [records, searchTerm]);
@@ -71,13 +72,14 @@ const CertificateHistory: React.FC = () => {
     }
   };
 
-  const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString('es-CO', {
+  const formatDateTime = (dateString: string): string => {
+    return new Date(dateString).toLocaleString('es-CO', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
+      hour12: true
     });
   };
 
@@ -118,7 +120,7 @@ const CertificateHistory: React.FC = () => {
       </div>
 
       <Input
-        placeholder="Buscar por nombre, documento o tipo de certificación..."
+        placeholder="Buscar por nombre, documento, tipo o código de verificación..."
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
         className="w-full md:max-w-md"
@@ -136,8 +138,9 @@ const CertificateHistory: React.FC = () => {
               <TableRow>
                 <TableHead className="min-w-[150px]">Empleado</TableHead>
                 <TableHead>Documento</TableHead>
-                <TableHead className="hidden md:table-cell">Tipo Certificación</TableHead>
-                <TableHead className="hidden lg:table-cell">Fecha Generación</TableHead>
+                <TableHead className="hidden md:table-cell">Tipo</TableHead>
+                <TableHead className="hidden lg:table-cell">Fecha y Hora</TableHead>
+                <TableHead className="hidden xl:table-cell">Código</TableHead>
                 <TableHead className="hidden xl:table-cell">Generado Por</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead>Acciones</TableHead>
@@ -158,8 +161,18 @@ const CertificateHistory: React.FC = () => {
                   <TableCell className="hidden lg:table-cell">
                     <div className="flex items-center gap-1 text-sm text-gray-600">
                       <Calendar className="h-3 w-3" />
-                      {formatDate(record.fecha_generacion)}
+                      {formatDateTime(record.fecha_generacion)}
                     </div>
+                  </TableCell>
+                  <TableCell className="hidden xl:table-cell">
+                    {record.detalles?.codigo_verificacion ? (
+                      <div className="flex items-center gap-1 text-xs font-mono bg-gray-100 px-2 py-1 rounded">
+                        <Hash className="h-3 w-3" />
+                        {record.detalles.codigo_verificacion}
+                      </div>
+                    ) : (
+                      <span className="text-gray-400 text-xs">Sin código</span>
+                    )}
                   </TableCell>
                   <TableCell className="hidden xl:table-cell">
                     {record.generado_por || 'Sistema'}
