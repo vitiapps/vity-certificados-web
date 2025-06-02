@@ -88,7 +88,7 @@ const Index = () => {
       <footer className="bg-white/10 backdrop-blur-sm mt-12">
         <div className="container mx-auto px-4 py-6 text-center">
           <p className="text-white/90 text-sm">
-            📞 <strong>Contáctanos:</strong> certificados@vity.com | +57 (1) 234-5678
+            📞 <strong>Contáctanos:</strong> coordinador.nomina@mvitales.com | +57 3213556969
           </p>
           <p className="text-white/70 text-xs mt-2">
             Horario de atención: Lunes a Viernes 8:00 AM - 6:00 PM
