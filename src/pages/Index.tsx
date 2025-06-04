@@ -1,17 +1,27 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import CedulaForm from '@/components/CedulaForm';
 import VerificationForm from '@/components/VerificationForm';
 import CertificateOptions from '@/components/CertificateOptions';
 import CertificateGenerator from '@/components/CertificateGenerator';
+import GoogleSheetsSetup from '@/components/GoogleSheetsSetup';
+import { googleSheetsService } from '@/services/googleSheetsService';
 
-type AppStep = 'cedula' | 'verification' | 'options' | 'certificate';
+type AppStep = 'setup' | 'cedula' | 'verification' | 'options' | 'certificate';
 
 const Index = () => {
   const [currentStep, setCurrentStep] = useState<AppStep>('cedula');
   const [employeeData, setEmployeeData] = useState<any>(null);
   const [selectedCertificateType, setSelectedCertificateType] = useState<string>('');
+
+  useEffect(() => {
+    // Verificar si Google Sheets está configurado al cargar la página
+    const isConfigured = googleSheetsService.loadCredentials();
+    if (!isConfigured) {
+      setCurrentStep('setup');
+    }
+  }, []);
 
   const handleCedulaValidated = (cedula: string, data: any) => {
     setEmployeeData(data);
@@ -49,11 +59,19 @@ const Index = () => {
     setSelectedCertificateType('');
   };
 
+  const handleSetupComplete = () => {
+    setCurrentStep('cedula');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-vity-green via-vity-green-light to-vity-green">
       <Header />
       
       <main className="container mx-auto px-4 py-8">
+        {currentStep === 'setup' && (
+          <GoogleSheetsSetup onSetupComplete={handleSetupComplete} />
+        )}
+        
         {currentStep === 'cedula' && (
           <CedulaForm onCedulaValidated={handleCedulaValidated} />
         )}
@@ -84,7 +102,6 @@ const Index = () => {
         )}
       </main>
       
-      {/* Footer con información de contacto */}
       <footer className="bg-white/10 backdrop-blur-sm mt-12">
         <div className="container mx-auto px-4 py-6 text-center">
           <p className="text-white/90 text-sm">
