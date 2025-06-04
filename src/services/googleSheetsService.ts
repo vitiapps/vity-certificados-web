@@ -1,4 +1,3 @@
-
 interface EmployeeData {
   id: string;
   tipo_documento: string;
@@ -26,8 +25,13 @@ interface CertificationHistory {
 }
 
 class GoogleSheetsService {
-  private spreadsheetId: string = '';
-  private apiKey: string = '';
+  private spreadsheetId: string = '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms';
+  private apiKey: string = 'AIzaSyBIiQCYaJX1D2gNFGSQlWXro45eyjN9F0o';
+  
+  constructor() {
+    // Auto-configurar las credenciales
+    this.loadCredentials();
+  }
   
   setCredentials(spreadsheetId: string, apiKey: string) {
     this.spreadsheetId = spreadsheetId;
@@ -46,7 +50,14 @@ class GoogleSheetsService {
       this.apiKey = savedApiKey;
       return true;
     }
-    return false;
+    
+    // Si no hay credenciales guardadas, usar las por defecto
+    if (!savedSpreadsheetId || !savedApiKey) {
+      localStorage.setItem('googleSheets_spreadsheetId', this.spreadsheetId);
+      localStorage.setItem('googleSheets_apiKey', this.apiKey);
+    }
+    
+    return true;
   }
 
   isConfigured(): boolean {
@@ -172,7 +183,9 @@ class GoogleSheetsService {
       const sampleEmployees = [
         ['1', 'CC', '1024532077', 'Juan Pérez García', 'Desarrollador Senior', 'VITY', 'ACTIVO', '4500000', '2023-01-15', '', 'INDEFINIDO', 'juan.perez@vity.com'],
         ['2', 'CC', '1098765432', 'María López Rodríguez', 'Analista de Recursos Humanos', 'VITY', 'ACTIVO', '3200000', '2023-03-20', '', 'INDEFINIDO', 'maria.lopez@vity.com'],
-        ['3', 'CC', '1122334455', 'Carlos Martínez Silva', 'Gerente de Proyectos', 'VITY', 'RETIRADO', '5500000', '2022-06-10', '2024-10-30', 'INDEFINIDO', 'carlos.martinez@vity.com']
+        ['3', 'CC', '1122334455', 'Carlos Martínez Silva', 'Gerente de Proyectos', 'VITY', 'RETIRADO', '5500000', '2022-06-10', '2024-10-30', 'INDEFINIDO', 'carlos.martinez@vity.com'],
+        ['4', 'CC', '1234567890', 'Ana Rodríguez Torres', 'Diseñadora UX/UI', 'VITY', 'ACTIVO', '3800000', '2023-05-12', '', 'INDEFINIDO', 'ana.rodriguez@vity.com'],
+        ['5', 'CC', '9876543210', 'Luis Gómez Vargas', 'Contador Senior', 'VITY', 'ACTIVO', '4200000', '2022-09-01', '', 'INDEFINIDO', 'luis.gomez@vity.com']
       ];
 
       // Crear headers para la hoja de Historial
@@ -181,7 +194,7 @@ class GoogleSheetsService {
       ];
 
       // Escribir datos a las hojas
-      await this.makeRequest('Empleados!A1:L4', 'POST', [...employeesHeaders, ...sampleEmployees]);
+      await this.makeRequest('Empleados!A1:L6', 'POST', [...employeesHeaders, ...sampleEmployees]);
       await this.makeRequest('Historial!A1:H1', 'POST', historyHeaders);
 
       return true;

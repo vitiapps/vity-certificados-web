@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import CedulaForm from '@/components/CedulaForm';
@@ -7,21 +6,64 @@ import CertificateOptions from '@/components/CertificateOptions';
 import CertificateGenerator from '@/components/CertificateGenerator';
 import GoogleSheetsSetup from '@/components/GoogleSheetsSetup';
 import { googleSheetsService } from '@/services/googleSheetsService';
+import { useToast } from '@/hooks/use-toast';
 
 type AppStep = 'setup' | 'cedula' | 'verification' | 'options' | 'certificate';
 
 const Index = () => {
-  const [currentStep, setCurrentStep] = useState<AppStep>('cedula');
+  const [currentStep, setCurrentStep] = useState<AppStep>('setup');
   const [employeeData, setEmployeeData] = useState<any>(null);
   const [selectedCertificateType, setSelectedCertificateType] = useState<string>('');
+  const [isInitialized, setIsInitialized] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
-    // Verificar si Google Sheets está configurado al cargar la página
-    const isConfigured = googleSheetsService.loadCredentials();
-    if (!isConfigured) {
-      setCurrentStep('setup');
-    }
-  }, []);
+    const initializeApp = async () => {
+      try {
+        // Las credenciales ya están configuradas en el constructor del servicio
+        const isConfigured = googleSheetsService.isConfigured();
+        
+        if (isConfigured) {
+          // Probar la conexión
+          const connectionSuccess = await googleSheetsService.testConnection();
+          
+          if (connectionSuccess) {
+            setCurrentStep('cedula');
+            toast({
+              title: "✅ Sistema listo",
+              description: "Google Sheets configurado correctamente",
+            });
+          } else {
+            // Si no se puede conectar, intentar crear los datos de ejemplo
+            try {
+              await googleSheetsService.createSampleData();
+              setCurrentStep('cedula');
+              toast({
+                title: "🎉 ¡Sistema configurado!",
+                description: "Se crearon los datos de ejemplo en Google Sheets",
+              });
+            } catch (error) {
+              setCurrentStep('setup');
+              toast({
+                title: "⚠️ Configuración necesaria",
+                description: "Necesitas configurar tu propia hoja de Google Sheets",
+                variant: "destructive"
+              });
+            }
+          }
+        } else {
+          setCurrentStep('setup');
+        }
+      } catch (error) {
+        console.error('Error initializing app:', error);
+        setCurrentStep('setup');
+      } finally {
+        setIsInitialized(true);
+      }
+    };
+
+    initializeApp();
+  }, [toast]);
 
   const handleCedulaValidated = (cedula: string, data: any) => {
     setEmployeeData(data);
@@ -62,6 +104,14 @@ const Index = () => {
   const handleSetupComplete = () => {
     setCurrentStep('cedula');
   };
+
+  if (!isInitialized) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-vity-green via-vity-green-light to-vity-green flex items-center justify-center">
+        <div className="text-white text-xl">Inicializando sistema...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-vity-green via-vity-green-light to-vity-green">
