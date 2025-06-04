@@ -290,64 +290,24 @@ const ExcelUploader: React.FC = () => {
               ⚠️ Todos los campos son OBLIGATORIOS
             </p>
             <p className="text-xs text-red-700 mb-4">
-              El archivo Excel debe contener exactamente estas columnas en la primera fila:
+              El archivo Excel debe contener exactamente estas columnas en la primera fila
             </p>
-            <div className="space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="p-3 bg-white border border-red-200 rounded">
-                  <span className="font-medium text-red-800 text-sm">nombre</span>
-                  <p className="text-xs text-gray-600 mt-1">Ejemplo: Juan Pérez</p>
-                </div>
-                <div className="p-3 bg-white border border-red-200 rounded">
-                  <span className="font-medium text-red-800 text-sm">numero_documento</span>
-                  <p className="text-xs text-gray-600 mt-1">Ejemplo: 12345678</p>
-                </div>
-                <div className="p-3 bg-white border border-red-200 rounded">
-                  <span className="font-medium text-red-800 text-sm">tipo_documento</span>
-                  <p className="text-xs text-gray-600 mt-1">Ejemplo: CC, CE, TI</p>
-                </div>
-                <div className="p-3 bg-white border border-red-200 rounded">
-                  <span className="font-medium text-red-800 text-sm">correo</span>
-                  <p className="text-xs text-gray-600 mt-1">Ejemplo: juan@email.com</p>
-                </div>
-                <div className="p-3 bg-white border border-red-200 rounded">
-                  <span className="font-medium text-red-800 text-sm">cargo</span>
-                  <p className="text-xs text-gray-600 mt-1">Ejemplo: Desarrollador</p>
-                </div>
-                <div className="p-3 bg-white border border-red-200 rounded">
-                  <span className="font-medium text-red-800 text-sm">empresa</span>
-                  <p className="text-xs text-gray-600 mt-1">Ejemplo: Vity SAS</p>
-                </div>
-                <div className="p-3 bg-white border border-red-200 rounded">
-                  <span className="font-medium text-red-800 text-sm">tipo_contrato</span>
-                  <p className="text-xs text-gray-600 mt-1">Ejemplo: Indefinido, Fijo</p>
-                </div>
-                <div className="p-3 bg-white border border-red-200 rounded">
-                  <span className="font-medium text-red-800 text-sm">fecha_ingreso</span>
-                  <p className="text-xs text-gray-600 mt-1">Formato: YYYY-MM-DD</p>
-                </div>
-                <div className="p-3 bg-white border border-red-200 rounded">
-                  <span className="font-medium text-red-800 text-sm">estado</span>
-                  <p className="text-xs text-gray-600 mt-1">Ejemplo: Activo, Inactivo</p>
-                </div>
-                <div className="p-3 bg-white border border-red-200 rounded">
-                  <span className="font-medium text-red-800 text-sm">fecha_retiro</span>
-                  <p className="text-xs text-gray-600 mt-1">Formato: YYYY-MM-DD (opcional)</p>
-                </div>
-                <div className="p-3 bg-white border border-red-200 rounded">
-                  <span className="font-medium text-red-800 text-sm">sueldo</span>
-                  <p className="text-xs text-gray-600 mt-1">Ejemplo: 3500000 (sin puntos)</p>
-                </div>
-              </div>
-            </div>
           </div>
 
           <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg mt-4">
             <p className="text-xs text-yellow-800">
               <strong>Notas importantes:</strong><br/>
-              • Las fechas deben estar en formato YYYY-MM-DD (ej: 2024-01-15)<br/>
-              • El sueldo debe ser numérico sin puntos ni comas<br/>
-              • La fecha_retiro puede estar vacía si el empleado está activo
+              • <strong>nombre</strong> - Ejemplo: Juan Pérez<br/>
+              • <strong>numero_documento</strong> - Ejemplo: 12345678<br/>
+              • <strong>tipo_documento</strong> - Ejemplo: CC, CE, TI<br/>
+              • <strong>correo</strong> - Ejemplo: juan@email.com<br/>
+              • <strong>cargo</strong> - Ejemplo: Desarrollador<br/>
+              • <strong>empresa</strong> - Ejemplo: Vity SAS<br/>
+              • <strong>tipo_contrato</strong> - Ejemplo: Indefinido, Fijo<br/>
+              • <strong>fecha_ingreso</strong> - Formato: YYYY-MM-DD (ej: 2024-01-15)<br/>
+              • <strong>estado</strong> - Ejemplo: Activo, Inactivo<br/>
+              • <strong>fecha_retiro</strong> - Formato: YYYY-MM-DD (opcional, puede estar vacía)<br/>
+              • <strong>sueldo</strong> - Ejemplo: 3500000 (numérico sin puntos ni comas)
             </p>
           </div>
         </CardContent>
