@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Upload, FileSpreadsheet, CheckCircle, AlertCircle } from 'lucide-react';
+import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Info } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 interface UploadStatus {
@@ -172,7 +172,6 @@ const ExcelUploader: React.FC = () => {
         description: `Se cargaron ${validData.length} empleados correctamente`
       });
 
-      // Reset form after successful upload
       setTimeout(() => {
         setFile(null);
         resetUploadStatus();
@@ -202,15 +201,15 @@ const ExcelUploader: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
-            <Upload className="h-5 w-5" />
+      <Card className="border border-gray-200">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Upload className="h-5 w-5 text-vity-green" />
             Cargar Archivo Excel
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
+          <div className="space-y-3">
             <label htmlFor="excel-file" className="block text-sm font-medium text-gray-700">
               Seleccionar archivo Excel (.xlsx, .xls)
             </label>
@@ -237,18 +236,18 @@ const ExcelUploader: React.FC = () => {
           </div>
 
           {file && !uploadStatus.isUploading && !uploadStatus.success && (
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-              <p className="text-sm text-blue-800">
+            <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+              <p className="text-sm text-gray-700">
                 <strong>Archivo seleccionado:</strong> {file.name}
               </p>
-              <p className="text-xs text-blue-600 mt-1">
+              <p className="text-xs text-gray-500 mt-1">
                 Tamaño: {(file.size / 1024 / 1024).toFixed(2)} MB
               </p>
             </div>
           )}
 
           {uploadStatus.isUploading && (
-            <div className="space-y-3">
+            <div className="space-y-3 p-4 bg-gray-50 rounded-lg">
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 border-2 border-vity-green border-t-transparent rounded-full animate-spin"></div>
                 <span className="text-sm text-gray-600">{uploadStatus.currentStep}</span>
@@ -261,14 +260,14 @@ const ExcelUploader: React.FC = () => {
           )}
 
           {uploadStatus.success && (
-            <div className="p-3 bg-green-50 border border-green-200 rounded-md flex items-center gap-2">
+            <div className="p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-green-600" />
               <p className="text-sm text-green-800">{uploadStatus.currentStep}</p>
             </div>
           )}
 
           {uploadStatus.error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-md flex items-start gap-2">
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
               <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm text-red-800 font-medium">Error en la carga</p>
@@ -279,26 +278,36 @@ const ExcelUploader: React.FC = () => {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Formato del Archivo</CardTitle>
+      <Card className="border border-gray-200">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Info className="h-5 w-5 text-blue-600" />
+            Formato del Archivo
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-sm text-gray-600 space-y-2">
-            <p><strong>Columnas requeridas:</strong></p>
-            <ul className="list-disc list-inside space-y-1 ml-4">
-              <li>nombre (obligatorio)</li>
-              <li>numero_documento (obligatorio)</li>
-              <li>correo (obligatorio)</li>
-              <li>tipo_documento (opcional, por defecto: CC)</li>
-              <li>cargo (opcional)</li>
-              <li>empresa (opcional)</li>
-              <li>tipo_contrato (opcional)</li>
-              <li>estado (opcional, por defecto: Activo)</li>
-              <li>fecha_ingreso (opcional, formato: YYYY-MM-DD)</li>
-              <li>fecha_retiro (opcional, formato: YYYY-MM-DD)</li>
-              <li>sueldo (opcional, numérico)</li>
-            </ul>
+          <div className="text-sm text-gray-600 space-y-3">
+            <div>
+              <p className="font-medium text-gray-800 mb-2">Columnas requeridas:</p>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                <span className="px-2 py-1 bg-red-50 text-red-700 rounded text-xs">• nombre</span>
+                <span className="px-2 py-1 bg-red-50 text-red-700 rounded text-xs">• numero_documento</span>
+                <span className="px-2 py-1 bg-red-50 text-red-700 rounded text-xs">• correo</span>
+              </div>
+            </div>
+            <div>
+              <p className="font-medium text-gray-800 mb-2">Columnas opcionales:</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <span className="px-2 py-1 bg-gray-50 text-gray-600 rounded text-xs">• tipo_documento</span>
+                <span className="px-2 py-1 bg-gray-50 text-gray-600 rounded text-xs">• cargo</span>
+                <span className="px-2 py-1 bg-gray-50 text-gray-600 rounded text-xs">• empresa</span>
+                <span className="px-2 py-1 bg-gray-50 text-gray-600 rounded text-xs">• tipo_contrato</span>
+                <span className="px-2 py-1 bg-gray-50 text-gray-600 rounded text-xs">• estado</span>
+                <span className="px-2 py-1 bg-gray-50 text-gray-600 rounded text-xs">• fecha_ingreso</span>
+                <span className="px-2 py-1 bg-gray-50 text-gray-600 rounded text-xs">• fecha_retiro</span>
+                <span className="px-2 py-1 bg-gray-50 text-gray-600 rounded text-xs">• sueldo</span>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
