@@ -36,6 +36,7 @@ const CertificateCustomization: React.FC = () => {
     headerColor: '#22c55e'
   });
   const [logoPreview, setLogoPreview] = useState<string>('');
+  const [isNewCompany, setIsNewCompany] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const signatureInputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const { toast } = useToast();
@@ -104,10 +105,16 @@ const CertificateCustomization: React.FC = () => {
   };
 
   const handleCompanySelect = (companyId: string) => {
+    if (companyId === '') {
+      createNewCompany();
+      return;
+    }
+    
     const company = companies.find(c => c.id === companyId);
     if (company) {
       setCurrentConfig(company);
       setSelectedCompany(companyId);
+      setIsNewCompany(false);
     }
   };
 
@@ -217,6 +224,15 @@ const CertificateCustomization: React.FC = () => {
   };
 
   const removeSignatory = (index: number) => {
+    if (currentConfig.signatories.length <= 1) {
+      toast({
+        title: "Error",
+        description: "Debe haber al menos un firmante",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setCurrentConfig(prev => ({
       ...prev,
       signatories: prev.signatories.filter((_, i) => i !== index)
@@ -244,11 +260,25 @@ const CertificateCustomization: React.FC = () => {
       return;
     }
 
-    const updatedCompanies = selectedCompany
-      ? companies.map(c => c.id === selectedCompany ? currentConfig : c)
-      : [...companies, { ...currentConfig, id: Date.now().toString() }];
+    // Generar ID si es nueva empresa
+    const configToSave = {
+      ...currentConfig,
+      id: currentConfig.id || `company-${Date.now()}`
+    };
+
+    let updatedCompanies;
+    if (isNewCompany || !selectedCompany) {
+      // Nueva empresa
+      updatedCompanies = [...companies, configToSave];
+      setSelectedCompany(configToSave.id);
+      setIsNewCompany(false);
+    } else {
+      // Actualizar empresa existente
+      updatedCompanies = companies.map(c => c.id === selectedCompany ? configToSave : c);
+    }
 
     setCompanies(updatedCompanies);
+    setCurrentConfig(configToSave);
     localStorage.setItem('certificate_company_configs', JSON.stringify(updatedCompanies));
     
     toast({
@@ -258,16 +288,48 @@ const CertificateCustomization: React.FC = () => {
   };
 
   const createNewCompany = () => {
-    setCurrentConfig({
+    const newConfig: CompanyCertificateConfig = {
       id: '',
       companyName: '',
       nit: '',
       city: '',
       signatories: [{ name: '', position: '' }],
       headerColor: '#22c55e'
-    });
+    };
+    
+    setCurrentConfig(newConfig);
     setSelectedCompany('');
     setLogoPreview('');
+    setIsNewCompany(true);
+    
+    // Limpiar referencias de archivos
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    signatureInputRefs.current = [];
+  };
+
+  const deleteCompany = () => {
+    if (!selectedCompany) {
+      toast({
+        title: "Error",
+        description: "Selecciona una empresa para eliminar",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const updatedCompanies = companies.filter(c => c.id !== selectedCompany);
+    setCompanies(updatedCompanies);
+    localStorage.setItem('certificate_company_configs', JSON.stringify(updatedCompanies));
+    
+    // Resetear formulario
+    createNewCompany();
+    
+    toast({
+      title: "Empresa eliminada",
+      description: "La configuración de la empresa se ha eliminado correctamente"
+    });
   };
 
   return (
@@ -285,7 +347,7 @@ const CertificateCustomization: React.FC = () => {
                 onChange={(e) => handleCompanySelect(e.target.value)}
                 className="w-full p-2 border rounded-md"
               >
-                <option value="">Seleccionar empresa...</option>
+                <option value="">Nueva empresa...</option>
                 {companies.map(company => (
                   <option key={company.id} value={company.id}>
                     {company.companyName}
@@ -293,10 +355,22 @@ const CertificateCustomization: React.FC = () => {
                 ))}
               </select>
             </div>
-            <Button onClick={createNewCompany} className="mt-6">
-              <Plus className="h-4 w-4 mr-2" />
-              Nueva Empresa
-            </Button>
+            <div className="flex gap-2 items-end">
+              <Button onClick={createNewCompany} className="mt-6">
+                <Plus className="h-4 w-4 mr-2" />
+                Nueva Empresa
+              </Button>
+              {selectedCompany && !isNewCompany && (
+                <Button 
+                  onClick={deleteCompany} 
+                  variant="destructive"
+                  className="mt-6"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Eliminar
+                </Button>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -489,7 +563,7 @@ const CertificateCustomization: React.FC = () => {
           <div className="mt-6">
             <Button onClick={saveConfiguration} className="bg-vity-green hover:bg-vity-green-dark">
               <Save className="h-4 w-4 mr-2" />
-              Guardar Configuración
+              {isNewCompany || !selectedCompany ? 'Crear Empresa' : 'Actualizar Configuración'}
             </Button>
           </div>
         </CardContent>
