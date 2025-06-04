@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -363,13 +362,13 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
         return `La empresa ${employeeData.empresa} certifica que ${employeeData.nombre}, identificado(a) con ${employeeData.tipo_documento} No. ${employeeData.numero_documento}, se encuentra vinculado(a) laboralmente desde el ${formatDate(employeeData.fecha_ingreso)} desempeñando el cargo de ${employeeData.cargo} con un salario de ${formatCurrency(employeeData.sueldo)}, y a la fecha continúa prestando sus servicios de manera activa bajo contrato ${employeeData.tipo_contrato}.`;
       
       case 'empleado-retirado':
-        return `La empresa ${employeeData.empresa} certifica que ${empleeeData.nombre}, identificado(a) con ${employeeData.tipo_documento} No. ${employeeData.numero_documento}, laboró en la empresa desde el ${formatDate(employeeData.fecha_ingreso)} hasta el ${formatDate(employeeData.fecha_retiro)}, desempeñando el cargo de ${employeeData.cargo} con un salario de ${formatCurrency(employeeData.sueldo)} bajo contrato ${employeeData.tipo_contrato}, fecha en la cual se retiró de la organización.`;
+        return `La empresa ${employeeData.empresa} certifica que ${employeeData.nombre}, identificado(a) con ${employeeData.tipo_documento} No. ${employeeData.numero_documento}, laboró en la empresa desde el ${formatDate(employeeData.fecha_ingreso)} hasta el ${formatDate(employeeData.fecha_retiro)}, desempeñando el cargo de ${employeeData.cargo} con un salario de ${formatCurrency(employeeData.sueldo)} bajo contrato ${employeeData.tipo_contrato}, fecha en la cual se retiró de la organización.`;
       
       case 'historial-completo':
         const statusText = employeeData.estado === 'ACTIVO' 
           ? `se encuentra vinculado(a) laboralmente desde el ${formatDate(employeeData.fecha_ingreso)} y a la fecha continúa prestando sus servicios` 
           : `laboró en la empresa desde el ${formatDate(employeeData.fecha_ingreso)} hasta el ${formatDate(employeeData.fecha_retiro)}`;
-        return `La empresa ${employeeData.empresa} certifica que ${empleeeData.nombre}, identificado(a) con ${employeeData.tipo_documento} No. ${empleeeData.numero_documento}, ${statusText} desempeñando el cargo de ${empleeeData.cargo} con un salario de ${formatCurrency(empleeeData.sueldo)} bajo contrato ${empleeeData.tipo_contrato}. Estado actual: ${empleeeData.estado}.`;
+        return `La empresa ${employeeData.empresa} certifica que ${employeeData.nombre}, identificado(a) con ${employeeData.tipo_documento} No. ${employeeData.numero_documento}, ${statusText} desempeñando el cargo de ${employeeData.cargo} con un salario de ${formatCurrency(employeeData.sueldo)} bajo contrato ${employeeData.tipo_contrato}. Estado actual: ${employeeData.estado}.`;
       
       default:
         return '';
@@ -427,7 +426,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
                   
                   <div className="max-w-[60%]">
                     <h1 className="text-3xl font-bold mb-2" style={{color: companyConfig?.headerColor || '#22c55e'}}>
-                      {companyConfig?.companyName || empleeeData.empresa.toUpperCase()}
+                      {companyConfig?.companyName || employeeData.empresa.toUpperCase()}
                     </h1>
                     <p className="text-gray-600">{companyConfig?.nit || 'NIT: 900.123.456-7'}</p>
                     <p className="text-gray-600">{companyConfig?.city || 'Bogotá, Colombia'}</p>
