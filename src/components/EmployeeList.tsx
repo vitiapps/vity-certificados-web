@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Edit } from 'lucide-react';
 import EditEmployeeDialog from './EditEmployeeDialog';
+import CreateEmployeeDialog from './CreateEmployeeDialog';
 
 interface Employee {
   id: string;
@@ -125,6 +125,10 @@ const EmployeeList: React.FC = () => {
     fetchEmployees();
   };
 
+  const handleEmployeeCreated = () => {
+    fetchEmployees();
+  };
+
   const formatCurrency = (amount: number | null): string => {
     if (amount === null) return 'N/A';
     return new Intl.NumberFormat('es-CO', {
@@ -145,9 +149,12 @@ const EmployeeList: React.FC = () => {
         <h3 className="text-lg md:text-xl font-semibold text-gray-800">
           Lista de Empleados ({filteredEmployees.length})
         </h3>
-        <Button onClick={fetchEmployees} disabled={isLoading} size="sm">
-          {isLoading ? 'Cargando...' : 'Actualizar'}
-        </Button>
+        <div className="flex gap-2">
+          <CreateEmployeeDialog onEmployeeCreated={handleEmployeeCreated} />
+          <Button onClick={fetchEmployees} disabled={isLoading} size="sm">
+            {isLoading ? 'Cargando...' : 'Actualizar'}
+          </Button>
+        </div>
       </div>
 
       <Input
