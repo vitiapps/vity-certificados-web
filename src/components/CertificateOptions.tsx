@@ -28,6 +28,17 @@ const CertificateOptions: React.FC<CertificateOptionsProps> = ({
     return new Date(dateString).toLocaleDateString('es-ES');
   };
 
+  // Función para verificar si el empleado está activo de manera más flexible
+  const isActiveEmployee = (status: string): boolean => {
+    return status.toUpperCase().includes('ACTIV');
+  };
+
+  // Función para verificar si el empleado está retirado de manera más flexible
+  const isRetiredEmployee = (status: string): boolean => {
+    return status.toUpperCase().includes('RETIR') || 
+           status.toUpperCase().includes('INACTIV');
+  };
+
   const certificateTypes = [
     {
       id: 'empleado-activo',
@@ -35,7 +46,7 @@ const CertificateOptions: React.FC<CertificateOptionsProps> = ({
       description: 'Certificado de vinculación laboral actual',
       icon: User,
       color: 'bg-green-500',
-      available: employeeData.estado === 'ACTIVO'
+      available: isActiveEmployee(employeeData.estado)
     },
     {
       id: 'empleado-retirado',
@@ -43,7 +54,7 @@ const CertificateOptions: React.FC<CertificateOptionsProps> = ({
       description: 'Certificado de desvinculación laboral',
       icon: Calendar,
       color: 'bg-blue-500',
-      available: employeeData.estado === 'RETIRADO'
+      available: isRetiredEmployee(employeeData.estado)
     },
     {
       id: 'historial-completo',
@@ -84,8 +95,8 @@ const CertificateOptions: React.FC<CertificateOptionsProps> = ({
             <div>
               <span className="font-medium text-gray-600">Estado:</span>
               <Badge 
-                variant={employeeData.estado === 'ACTIVO' ? 'default' : 'secondary'}
-                className={employeeData.estado === 'ACTIVO' ? 'bg-vity-green' : 'bg-gray-500'}
+                variant={isActiveEmployee(employeeData.estado) ? 'default' : 'secondary'}
+                className={isActiveEmployee(employeeData.estado) ? 'bg-vity-green' : 'bg-gray-500'}
               >
                 {employeeData.estado}
               </Badge>
