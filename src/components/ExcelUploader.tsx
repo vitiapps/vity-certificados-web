@@ -286,27 +286,94 @@ const ExcelUploader: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-sm text-gray-600 space-y-3">
-            <div>
-              <p className="font-medium text-gray-800 mb-2">Columnas requeridas:</p>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                <span className="px-2 py-1 bg-red-50 text-red-700 rounded text-xs">• nombre</span>
-                <span className="px-2 py-1 bg-red-50 text-red-700 rounded text-xs">• numero_documento</span>
-                <span className="px-2 py-1 bg-red-50 text-red-700 rounded text-xs">• correo</span>
+          <div className="space-y-4">
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="font-semibold text-red-800 mb-3 text-sm">
+                ⚠️ Todas las columnas son OBLIGATORIAS
+              </p>
+              <p className="text-xs text-red-700 mb-3">
+                El archivo Excel debe contener exactamente estas columnas en la primera fila:
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                <span className="px-3 py-2 bg-red-100 text-red-800 rounded text-xs font-medium border border-red-300">
+                  nombre
+                </span>
+                <span className="px-3 py-2 bg-red-100 text-red-800 rounded text-xs font-medium border border-red-300">
+                  numero_documento
+                </span>
+                <span className="px-3 py-2 bg-red-100 text-red-800 rounded text-xs font-medium border border-red-300">
+                  tipo_documento
+                </span>
+                <span className="px-3 py-2 bg-red-100 text-red-800 rounded text-xs font-medium border border-red-300">
+                  correo
+                </span>
+                <span className="px-3 py-2 bg-red-100 text-red-800 rounded text-xs font-medium border border-red-300">
+                  cargo
+                </span>
+                <span className="px-3 py-2 bg-red-100 text-red-800 rounded text-xs font-medium border border-red-300">
+                  empresa
+                </span>
+                <span className="px-3 py-2 bg-red-100 text-red-800 rounded text-xs font-medium border border-red-300">
+                  tipo_contrato
+                </span>
+                <span className="px-3 py-2 bg-red-100 text-red-800 rounded text-xs font-medium border border-red-300">
+                  fecha_ingreso
+                </span>
+                <span className="px-3 py-2 bg-red-100 text-red-800 rounded text-xs font-medium border border-red-300">
+                  estado
+                </span>
+                <span className="px-3 py-2 bg-red-100 text-red-800 rounded text-xs font-medium border border-red-300">
+                  fecha_retiro
+                </span>
+                <span className="px-3 py-2 bg-red-100 text-red-800 rounded text-xs font-medium border border-red-300">
+                  sueldo
+                </span>
               </div>
             </div>
-            <div>
-              <p className="font-medium text-gray-800 mb-2">Columnas opcionales:</p>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                <span className="px-2 py-1 bg-gray-50 text-gray-600 rounded text-xs">• tipo_documento</span>
-                <span className="px-2 py-1 bg-gray-50 text-gray-600 rounded text-xs">• cargo</span>
-                <span className="px-2 py-1 bg-gray-50 text-gray-600 rounded text-xs">• empresa</span>
-                <span className="px-2 py-1 bg-gray-50 text-gray-600 rounded text-xs">• tipo_contrato</span>
-                <span className="px-2 py-1 bg-gray-50 text-gray-600 rounded text-xs">• estado</span>
-                <span className="px-2 py-1 bg-gray-50 text-gray-600 rounded text-xs">• fecha_ingreso</span>
-                <span className="px-2 py-1 bg-gray-50 text-gray-600 rounded text-xs">• fecha_retiro</span>
-                <span className="px-2 py-1 bg-gray-50 text-gray-600 rounded text-xs">• sueldo</span>
+
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="font-medium text-blue-800 mb-2 text-sm">Formato de ejemplo:</p>
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-xs border border-blue-300">
+                  <thead className="bg-blue-100">
+                    <tr>
+                      <th className="px-2 py-1 border border-blue-300 text-blue-900">nombre</th>
+                      <th className="px-2 py-1 border border-blue-300 text-blue-900">numero_documento</th>
+                      <th className="px-2 py-1 border border-blue-300 text-blue-900">tipo_documento</th>
+                      <th className="px-2 py-1 border border-blue-300 text-blue-900">correo</th>
+                      <th className="px-2 py-1 border border-blue-300 text-blue-900">cargo</th>
+                      <th className="px-2 py-1 border border-blue-300 text-blue-900">empresa</th>
+                      <th className="px-2 py-1 border border-blue-300 text-blue-900">tipo_contrato</th>
+                      <th className="px-2 py-1 border border-blue-300 text-blue-900">fecha_ingreso</th>
+                      <th className="px-2 py-1 border border-blue-300 text-blue-900">estado</th>
+                      <th className="px-2 py-1 border border-blue-300 text-blue-900">fecha_retiro</th>
+                      <th className="px-2 py-1 border border-blue-300 text-blue-900">sueldo</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white">
+                    <tr>
+                      <td className="px-2 py-1 border border-blue-300 text-gray-700">Juan Pérez</td>
+                      <td className="px-2 py-1 border border-blue-300 text-gray-700">12345678</td>
+                      <td className="px-2 py-1 border border-blue-300 text-gray-700">CC</td>
+                      <td className="px-2 py-1 border border-blue-300 text-gray-700">juan@email.com</td>
+                      <td className="px-2 py-1 border border-blue-300 text-gray-700">Desarrollador</td>
+                      <td className="px-2 py-1 border border-blue-300 text-gray-700">Vity</td>
+                      <td className="px-2 py-1 border border-blue-300 text-gray-700">Indefinido</td>
+                      <td className="px-2 py-1 border border-blue-300 text-gray-700">2024-01-15</td>
+                      <td className="px-2 py-1 border border-blue-300 text-gray-700">Activo</td>
+                      <td className="px-2 py-1 border border-blue-300 text-gray-700"></td>
+                      <td className="px-2 py-1 border border-blue-300 text-gray-700">3500000</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
+            </div>
+
+            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-xs text-yellow-800">
+                <strong>Nota:</strong> La fecha_retiro puede estar vacía si el empleado está activo. 
+                Las fechas deben estar en formato YYYY-MM-DD (ej: 2024-01-15).
+              </p>
             </div>
           </div>
         </CardContent>
