@@ -3,15 +3,16 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Database, History, LogOut, UserPlus, Users } from 'lucide-react';
+import { Database, History, LogOut, UserPlus, Users, Settings } from 'lucide-react';
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import EmployeeDataManager from './EmployeeDataManager';
 import EmployeeList from './EmployeeList';
 import CertificateHistory from './CertificateHistory';
 import CreateAdminForm from './CreateAdminForm';
+import CertificateCustomization from './CertificateCustomization';
 
 const AdminPanel: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'data-manager' | 'employees' | 'history' | 'create-admin'>('data-manager');
+  const [activeTab, setActiveTab] = useState<'data-manager' | 'employees' | 'history' | 'create-admin' | 'certificate-config'>('data-manager');
   const { admin, logout } = useAdminAuth();
   const { toast } = useToast();
 
@@ -54,11 +55,11 @@ const AdminPanel: React.FC = () => {
           </CardHeader>
           
           <div className="flex justify-center mb-6 px-4">
-            <div className="flex flex-col sm:flex-row bg-gray-100 rounded-lg p-1 w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row bg-gray-100 rounded-lg p-1 w-full sm:w-auto overflow-x-auto">
               <Button
                 variant={activeTab === 'data-manager' ? 'default' : 'ghost'}
                 onClick={() => setActiveTab('data-manager')}
-                className="flex items-center justify-center gap-2 mb-1 sm:mb-0 text-xs sm:text-sm"
+                className="flex items-center justify-center gap-2 mb-1 sm:mb-0 text-xs sm:text-sm whitespace-nowrap"
               >
                 <Database size={16} />
                 <span className="hidden sm:inline">Gestión de Datos</span>
@@ -67,7 +68,7 @@ const AdminPanel: React.FC = () => {
               <Button
                 variant={activeTab === 'employees' ? 'default' : 'ghost'}
                 onClick={() => setActiveTab('employees')}
-                className="flex items-center justify-center gap-2 mb-1 sm:mb-0 text-xs sm:text-sm"
+                className="flex items-center justify-center gap-2 mb-1 sm:mb-0 text-xs sm:text-sm whitespace-nowrap"
               >
                 <Users size={16} />
                 <span className="hidden sm:inline">Ver Empleados</span>
@@ -76,17 +77,26 @@ const AdminPanel: React.FC = () => {
               <Button
                 variant={activeTab === 'history' ? 'default' : 'ghost'}
                 onClick={() => setActiveTab('history')}
-                className="flex items-center justify-center gap-2 mb-1 sm:mb-0 text-xs sm:text-sm"
+                className="flex items-center justify-center gap-2 mb-1 sm:mb-0 text-xs sm:text-sm whitespace-nowrap"
               >
                 <History size={16} />
                 <span className="hidden sm:inline">Historial</span>
                 <span className="sm:hidden">Historial</span>
               </Button>
+              <Button
+                variant={activeTab === 'certificate-config' ? 'default' : 'ghost'}
+                onClick={() => setActiveTab('certificate-config')}
+                className="flex items-center justify-center gap-2 mb-1 sm:mb-0 text-xs sm:text-sm whitespace-nowrap"
+              >
+                <Settings size={16} />
+                <span className="hidden sm:inline">Certificados</span>
+                <span className="sm:hidden">Config</span>
+              </Button>
               {admin?.role === 'super_admin' && (
                 <Button
                   variant={activeTab === 'create-admin' ? 'default' : 'ghost'}
                   onClick={() => setActiveTab('create-admin')}
-                  className="flex items-center justify-center gap-2 text-xs sm:text-sm"
+                  className="flex items-center justify-center gap-2 text-xs sm:text-sm whitespace-nowrap"
                 >
                   <UserPlus size={16} />
                   <span className="hidden sm:inline">Crear Admin</span>
@@ -100,6 +110,7 @@ const AdminPanel: React.FC = () => {
             {activeTab === 'data-manager' && <EmployeeDataManager />}
             {activeTab === 'employees' && <EmployeeList />}
             {activeTab === 'history' && <CertificateHistory />}
+            {activeTab === 'certificate-config' && <CertificateCustomization />}
             {activeTab === 'create-admin' && <CreateAdminForm />}
           </CardContent>
         </Card>
