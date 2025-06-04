@@ -224,7 +224,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
             position: absolute;
             top: 0;
             right: 0;
-            max-height: 120px;
+            max-height: 80px;
             width: auto;
         }
         .company-info {
@@ -420,7 +420,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
                     <img 
                       src={companyConfig.logoUrl} 
                       alt="Logo" 
-                      className="absolute top-0 right-0 h-28 w-auto" 
+                      className="absolute top-0 right-0 h-20 w-auto" 
                     />
                   )}
                   
