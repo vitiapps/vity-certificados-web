@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Download, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { googleSheetsService } from '@/services/googleSheetsService';
+import { supabaseEmployeeService } from '@/services/supabaseEmployeeService';
 
 interface CertificateGeneratorProps {
   employeeData: any;
@@ -76,7 +76,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
 
   const saveCertificateToHistory = async (code: string) => {
     try {
-      const saved = await googleSheetsService.saveCertificationHistory({
+      const saved = await supabaseEmployeeService.saveCertificationHistory({
         empleado_id: employeeData.id,
         nombre_empleado: employeeData.nombre,
         numero_documento: employeeData.numero_documento,

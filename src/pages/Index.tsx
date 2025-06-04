@@ -1,17 +1,17 @@
+
 import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import CedulaForm from '@/components/CedulaForm';
 import VerificationForm from '@/components/VerificationForm';
 import CertificateOptions from '@/components/CertificateOptions';
 import CertificateGenerator from '@/components/CertificateGenerator';
-import GoogleSheetsSetup from '@/components/GoogleSheetsSetup';
-import { googleSheetsService } from '@/services/googleSheetsService';
+import { supabaseEmployeeService } from '@/services/supabaseEmployeeService';
 import { useToast } from '@/hooks/use-toast';
 
-type AppStep = 'setup' | 'cedula' | 'verification' | 'options' | 'certificate';
+type AppStep = 'cedula' | 'verification' | 'options' | 'certificate';
 
 const Index = () => {
-  const [currentStep, setCurrentStep] = useState<AppStep>('setup');
+  const [currentStep, setCurrentStep] = useState<AppStep>('cedula');
   const [employeeData, setEmployeeData] = useState<any>(null);
   const [selectedCertificateType, setSelectedCertificateType] = useState<string>('');
   const [isInitialized, setIsInitialized] = useState(false);
@@ -20,43 +20,28 @@ const Index = () => {
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // Las credenciales ya están configuradas en el constructor del servicio
-        const isConfigured = googleSheetsService.isConfigured();
+        // Probar la conexión con Supabase
+        const connectionSuccess = await supabaseEmployeeService.testConnection();
         
-        if (isConfigured) {
-          // Probar la conexión
-          const connectionSuccess = await googleSheetsService.testConnection();
-          
-          if (connectionSuccess) {
-            setCurrentStep('cedula');
-            toast({
-              title: "✅ Sistema listo",
-              description: "Google Sheets configurado correctamente",
-            });
-          } else {
-            // Si no se puede conectar, intentar crear los datos de ejemplo
-            try {
-              await googleSheetsService.createSampleData();
-              setCurrentStep('cedula');
-              toast({
-                title: "🎉 ¡Sistema configurado!",
-                description: "Se crearon los datos de ejemplo en Google Sheets",
-              });
-            } catch (error) {
-              setCurrentStep('setup');
-              toast({
-                title: "⚠️ Configuración necesaria",
-                description: "Necesitas configurar tu propia hoja de Google Sheets",
-                variant: "destructive"
-              });
-            }
-          }
+        if (connectionSuccess) {
+          toast({
+            title: "✅ Sistema listo",
+            description: "Base de datos conectada correctamente",
+          });
         } else {
-          setCurrentStep('setup');
+          toast({
+            title: "⚠️ Error de conexión",
+            description: "No se pudo conectar con la base de datos",
+            variant: "destructive"
+          });
         }
       } catch (error) {
         console.error('Error initializing app:', error);
-        setCurrentStep('setup');
+        toast({
+          title: "Error",
+          description: "Error al inicializar la aplicación",
+          variant: "destructive"
+        });
       } finally {
         setIsInitialized(true);
       }
@@ -101,10 +86,6 @@ const Index = () => {
     setSelectedCertificateType('');
   };
 
-  const handleSetupComplete = () => {
-    setCurrentStep('cedula');
-  };
-
   if (!isInitialized) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-vity-green via-vity-green-light to-vity-green flex items-center justify-center">
@@ -118,10 +99,6 @@ const Index = () => {
       <Header />
       
       <main className="container mx-auto px-4 py-8">
-        {currentStep === 'setup' && (
-          <GoogleSheetsSetup onSetupComplete={handleSetupComplete} />
-        )}
-        
         {currentStep === 'cedula' && (
           <CedulaForm onCedulaValidated={handleCedulaValidated} />
         )}
