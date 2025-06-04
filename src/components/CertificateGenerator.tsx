@@ -253,7 +253,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
         .signatures {
             margin-top: 80px;
             display: flex;
-            justify-content: center;
+            justify-content: space-around;
             flex-wrap: wrap;
         }
         .signature-block {
@@ -393,7 +393,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
       </Card>
 
       {/* Vista previa del certificado */}
-      <Card className="border-0 shadow-xl bg-transparent backdrop-blur-sm">
+      <Card className="border-0 shadow-xl bg-white backdrop-blur-sm">
         <CardContent className="p-8">
           {isGenerating ? (
             <div className="text-center py-12">
@@ -401,7 +401,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
               <p className="text-gray-600">Generando tu certificado...</p>
             </div>
           ) : (
-            <div className="bg-white rounded-lg shadow-lg p-8 space-y-8 relative">
+            <div className="space-y-6 relative">
               {/* Marca de agua de fondo */}
               {companyConfig?.logoUrl && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-5 z-0">
@@ -434,7 +434,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
                 </div>
 
                 {/* Título del certificado */}
-                <div className="text-center py-6">
+                <div className="text-center">
                   <h2 className="text-2xl font-bold text-gray-800 mb-2">
                     CERTIFICACIÓN LABORAL
                   </h2>
@@ -443,17 +443,17 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
                   </p>
                 </div>
 
-                {/* Contenido del certificado con más espacio superior */}
-                <div className="bg-gray-50 p-8 rounded-lg mt-8">
+                {/* Contenido del certificado */}
+                <div className="bg-gray-50 p-6 rounded-lg">
                   <p className="text-gray-800 leading-relaxed text-justify">
                     {getCertificateContent()}
                   </p>
                 </div>
 
-                {/* Firmantes centrados */}
+                {/* Firmantes */}
                 {companyConfig?.signatories && companyConfig.signatories.length > 0 && (
-                  <div className="flex justify-center mt-20">
-                    <div className="flex flex-col items-center space-y-8">
+                  <div className="flex justify-center mt-16">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                       {companyConfig.signatories.map((signatory, index) => (
                         <div key={index} className="text-center">
                           {signatory.signature ? (
@@ -474,7 +474,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
                 )}
 
                 {/* Pie del certificado */}
-                <div className="text-center text-sm text-gray-600 border-t pt-6 mt-16">
+                <div className="text-center text-sm text-gray-600 border-t pt-6">
                   <p>Este certificado es válido con firma digital y código de verificación</p>
                   <p className="font-mono text-xs mt-2">Código: {verificationCode}</p>
                   {companyConfig?.footerText && (
