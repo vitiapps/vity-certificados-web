@@ -215,15 +215,20 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
             z-index: 2;
         }
         .header {
-            text-align: center;
+            position: relative;
             border-bottom: 3px solid ${headerColor};
             padding-bottom: 30px;
             margin-bottom: 40px;
         }
         .logo {
-            max-height: 150px;
+            position: absolute;
+            top: 0;
+            right: 0;
+            max-height: 120px;
             width: auto;
-            margin-bottom: 20px;
+        }
+        .company-info {
+            max-width: 60%;
         }
         .company-name {
             font-size: 32px;
@@ -236,6 +241,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
             font-weight: bold;
             color: #1f2937;
             margin: 30px 0;
+            text-align: center;
         }
         .content {
             font-size: 16px;
@@ -306,9 +312,11 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
         <div class="certificate-content">
             <div class="header">
                 ${logoUrl ? `<img src="${logoUrl}" alt="Logo" class="logo" />` : ''}
-                <div class="company-name">${companyName}</div>
-                <div style="color: #6b7280;">${nit}</div>
-                <div style="color: #6b7280;">${city}</div>
+                <div class="company-info">
+                    <div class="company-name">${companyName}</div>
+                    <div style="color: #6b7280;">${nit}</div>
+                    <div style="color: #6b7280;">${city}</div>
+                </div>
             </div>
 
             <div style="text-align: center;">
@@ -406,27 +414,23 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
               )}
               
               <div className="relative z-10">
-                {/* Encabezado de la empresa */}
-                <div className="text-center border-b pb-6">
-                  {companyConfig?.logoUrl ? (
+                {/* Encabezado de la empresa con logo en la esquina derecha */}
+                <div className="border-b pb-6 relative">
+                  {companyConfig?.logoUrl && (
                     <img 
                       src={companyConfig.logoUrl} 
                       alt="Logo" 
-                      className="h-36 w-auto mx-auto mb-4" 
-                    />
-                  ) : (
-                    <img 
-                      src="/lovable-uploads/09667bc0-9af8-468b-9c4c-d4844d158bc0.png" 
-                      alt="Vity Logo" 
-                      className="h-36 w-auto mx-auto mb-4" 
+                      className="absolute top-0 right-0 h-28 w-auto" 
                     />
                   )}
                   
-                  <h1 className="text-3xl font-bold mb-2" style={{color: companyConfig?.headerColor || '#22c55e'}}>
-                    {companyConfig?.companyName || employeeData.empresa.toUpperCase()}
-                  </h1>
-                  <p className="text-gray-600">{companyConfig?.nit || 'NIT: 900.123.456-7'}</p>
-                  <p className="text-gray-600">{companyConfig?.city || 'Bogotá, Colombia'}</p>
+                  <div className="max-w-[60%]">
+                    <h1 className="text-3xl font-bold mb-2" style={{color: companyConfig?.headerColor || '#22c55e'}}>
+                      {companyConfig?.companyName || employeeData.empresa.toUpperCase()}
+                    </h1>
+                    <p className="text-gray-600">{companyConfig?.nit || 'NIT: 900.123.456-7'}</p>
+                    <p className="text-gray-600">{companyConfig?.city || 'Bogotá, Colombia'}</p>
+                  </div>
                 </div>
 
                 {/* Título del certificado */}
