@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -101,6 +100,8 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const logout = () => {
     setAdmin(null);
     localStorage.removeItem('admin_session');
+    // Redirigir a la página principal
+    window.location.href = '/';
   };
 
   return (

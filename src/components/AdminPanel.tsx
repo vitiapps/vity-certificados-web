@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
@@ -15,13 +16,15 @@ const AdminPanel: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'data-manager' | 'employees' | 'history' | 'create-admin' | 'certificate-config'>('data-manager');
   const { admin, logout } = useAdminAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleLogout = () => {
-    logout();
     toast({
       title: "Sesión cerrada",
       description: "Has cerrado sesión correctamente",
     });
+    logout();
+    // La redirección ahora se maneja en el contexto
   };
 
   return (
