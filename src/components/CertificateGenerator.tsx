@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -187,8 +188,8 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
             pointer-events: none;
         }
         .watermark img {
-            max-width: 400px;
-            max-height: 400px;
+            max-width: 600px;
+            max-height: 600px;
             width: auto;
             height: auto;
         }
@@ -203,10 +204,9 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
             margin-bottom: 40px;
         }
         .logo {
-            max-height: 120px;
+            max-height: 150px;
             width: auto;
             margin-bottom: 20px;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
         }
         .company-name {
             font-size: 32px;
@@ -335,7 +335,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
       case 'empleado-activo':
         return `La empresa ${employeeData.empresa} certifica que ${employeeData.nombre}, identificado(a) con ${employeeData.tipo_documento} No. ${employeeData.numero_documento}, se encuentra vinculado(a) laboralmente desde el ${formatDate(employeeData.fecha_ingreso)} desempeñando el cargo de ${employeeData.cargo} con un salario de ${formatCurrency(employeeData.sueldo)}, y a la fecha continúa prestando sus servicios de manera activa bajo contrato ${employeeData.tipo_contrato}.`;
       case 'empleado-retirado':
-        return `La empresa ${employeeData.empresa} certifica que ${employeeData.nombre}, identificado(a) con ${employeeData.tipo_documento} No. ${employeeData.numero_documento}, laboró en la empresa desde el ${formatDate(employeeData.fecha_ingreso)} hasta el ${formatDate(employeeData.fecha_retiro)}, desempeñando el cargo de ${employeeData.cargo} con un salario de ${formatCurrency(employeeData.sueldo)} bajo contrato ${employeeData.tipo_contrato}, fecha en la cual se retiró de la organización.`;
+        return `La empresa ${employeeData.empresa} certifica que ${employeeData.nombre}, identificado(a) con ${empleadoData.tipo_documento} No. ${employeeData.numero_documento}, laboró en la empresa desde el ${formatDate(employeeData.fecha_ingreso)} hasta el ${formatDate(employeeData.fecha_retiro)}, desempeñando el cargo de ${employeeData.cargo} con un salario de ${formatCurrency(employeeData.sueldo)} bajo contrato ${employeeData.tipo_contrato}, fecha en la cual se retiró de la organización.`;
       case 'historial-completo':
         const statusText = employeeData.estado === 'ACTIVO' ? `se encuentra vinculado(a) laboralmente desde el ${formatDate(employeeData.fecha_ingreso)} y a la fecha continúa prestando sus servicios` : `laboró en la empresa desde el ${formatDate(employeeData.fecha_ingreso)} hasta el ${formatDate(employeeData.fecha_retiro)}`;
         return `La empresa ${employeeData.empresa} certifica que ${employeeData.nombre}, identificado(a) con ${employeeData.tipo_documento} No. ${employeeData.numero_documento}, ${statusText} desempeñando el cargo de ${employeeData.cargo} con un salario de ${formatCurrency(employeeData.sueldo)} bajo contrato ${employeeData.tipo_contrato}. Estado actual: ${employeeData.estado}.`;
@@ -372,7 +372,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
                   <img 
                     src={companyConfig.logoUrl} 
                     alt="Watermark" 
-                    className="max-w-96 max-h-96 transform rotate-45" 
+                    className="max-w-[600px] max-h-[600px] transform rotate-45" 
                   />
                 </div>
               )}
@@ -380,7 +380,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
               <div className="relative z-10">
                 {/* Encabezado de la empresa */}
                 <div className="text-center border-b pb-6">
-                  {companyConfig?.logoUrl ? <img src={companyConfig.logoUrl} alt="Logo" className="h-24 w-auto mx-auto mb-4 filter drop-shadow-md" /> : <img src="/lovable-uploads/09667bc0-9af8-468b-9c4c-d4844d158bc0.png" alt="Vity Logo" className="h-24 w-auto mx-auto mb-4 filter drop-shadow-md" />}
+                  {companyConfig?.logoUrl ? <img src={companyConfig.logoUrl} alt="Logo" className="h-36 w-auto mx-auto mb-4" /> : <img src="/lovable-uploads/09667bc0-9af8-468b-9c4c-d4844d158bc0.png" alt="Vity Logo" className="h-36 w-auto mx-auto mb-4" />}
                   
                   <h1 className="text-3xl font-bold mb-2" style={{color: companyConfig?.headerColor || '#22c55e'}}>
                     {companyConfig?.companyName || employeeData.empresa.toUpperCase()}
