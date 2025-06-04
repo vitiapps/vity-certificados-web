@@ -3,16 +3,15 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Database, Download, History, LogOut, UserPlus } from 'lucide-react';
+import { Database, History, LogOut, UserPlus, Users } from 'lucide-react';
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
-import ExcelUploader from './ExcelUploader';
-import ExcelDownloader from './ExcelDownloader';
+import EmployeeDataManager from './EmployeeDataManager';
 import EmployeeList from './EmployeeList';
 import CertificateHistory from './CertificateHistory';
 import CreateAdminForm from './CreateAdminForm';
 
 const AdminPanel: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'upload' | 'download' | 'employees' | 'history' | 'create-admin'>('upload');
+  const [activeTab, setActiveTab] = useState<'data-manager' | 'employees' | 'history' | 'create-admin'>('data-manager');
   const { admin, logout } = useAdminAuth();
   const { toast } = useToast();
 
@@ -35,7 +34,7 @@ const AdminPanel: React.FC = () => {
                   Panel de Administrador
                 </CardTitle>
                 <p className="text-gray-600 mt-2 text-sm md:text-base">
-                  Gestiona la información de empleados
+                  Gestiona la información de empleados y certificaciones
                 </p>
                 {admin && (
                   <p className="text-sm text-gray-500 mt-1">
@@ -57,29 +56,20 @@ const AdminPanel: React.FC = () => {
           <div className="flex justify-center mb-6 px-4">
             <div className="flex flex-col sm:flex-row bg-gray-100 rounded-lg p-1 w-full sm:w-auto">
               <Button
-                variant={activeTab === 'download' ? 'default' : 'ghost'}
-                onClick={() => setActiveTab('download')}
+                variant={activeTab === 'data-manager' ? 'default' : 'ghost'}
+                onClick={() => setActiveTab('data-manager')}
                 className="flex items-center justify-center gap-2 mb-1 sm:mb-0 text-xs sm:text-sm"
               >
-                <Download size={16} />
-                <span className="hidden sm:inline">Descargar Base</span>
-                <span className="sm:hidden">Descargar</span>
-              </Button>
-              <Button
-                variant={activeTab === 'upload' ? 'default' : 'ghost'}
-                onClick={() => setActiveTab('upload')}
-                className="flex items-center justify-center gap-2 mb-1 sm:mb-0 text-xs sm:text-sm"
-              >
-                <Upload size={16} />
-                <span className="hidden sm:inline">Cargar Excel</span>
-                <span className="sm:hidden">Cargar</span>
+                <Database size={16} />
+                <span className="hidden sm:inline">Gestión de Datos</span>
+                <span className="sm:hidden">Datos</span>
               </Button>
               <Button
                 variant={activeTab === 'employees' ? 'default' : 'ghost'}
                 onClick={() => setActiveTab('employees')}
                 className="flex items-center justify-center gap-2 mb-1 sm:mb-0 text-xs sm:text-sm"
               >
-                <Database size={16} />
+                <Users size={16} />
                 <span className="hidden sm:inline">Ver Empleados</span>
                 <span className="sm:hidden">Empleados</span>
               </Button>
@@ -107,8 +97,7 @@ const AdminPanel: React.FC = () => {
           </div>
 
           <CardContent className="px-4 md:px-6">
-            {activeTab === 'download' && <ExcelDownloader />}
-            {activeTab === 'upload' && <ExcelUploader />}
+            {activeTab === 'data-manager' && <EmployeeDataManager />}
             {activeTab === 'employees' && <EmployeeList />}
             {activeTab === 'history' && <CertificateHistory />}
             {activeTab === 'create-admin' && <CreateAdminForm />}
