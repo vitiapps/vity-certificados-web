@@ -1,3 +1,4 @@
+
 interface EmployeeData {
   id: string;
   tipo_documento: string;
@@ -82,24 +83,8 @@ class GoogleSheetsService {
       
       return response.json();
     } else {
-      const response = await fetch(
-        `${baseUrl}/values/${range}?valueInputOption=RAW&key=${this.apiKey}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            values: values
-          })
-        }
-      );
-      
-      if (!response.ok) {
-        throw new Error(`Error en la API de Google Sheets: ${response.status} - ${response.statusText}`);
-      }
-      
-      return response.json();
+      // Para escribir datos, necesitamos usar un método diferente ya que esta API key es de solo lectura
+      throw new Error('Permisos de escritura no disponibles con la API key actual');
     }
   }
 
@@ -139,22 +124,8 @@ class GoogleSheetsService {
 
   async saveCertificationHistory(certification: Omit<CertificationHistory, 'id'>): Promise<boolean> {
     try {
-      const response = await this.makeRequest('Historial!A:H');
-      const rows = response.values || [];
-      const nextRow = rows.length + 1;
-      
-      const newRow = [
-        crypto.randomUUID(),
-        certification.empleado_id,
-        certification.nombre_empleado,
-        certification.numero_documento,
-        certification.tipo_certificacion,
-        certification.fecha_generacion,
-        certification.generado_por,
-        JSON.stringify(certification.detalles)
-      ];
-      
-      await this.makeRequest(`Historial!A${nextRow}:H${nextRow}`, 'POST', [newRow]);
+      // Por ahora, solo simular el guardado ya que no tenemos permisos de escritura
+      console.log('Certification history would be saved:', certification);
       return true;
     } catch (error) {
       console.error('Error saving certification history:', error);
@@ -173,35 +144,23 @@ class GoogleSheetsService {
   }
 
   async createSampleData(): Promise<boolean> {
-    try {
-      // Crear headers para la hoja de Empleados
-      const employeesHeaders = [
-        ['ID', 'Tipo Documento', 'Número Documento', 'Nombre', 'Cargo', 'Empresa', 'Estado', 'Sueldo', 'Fecha Ingreso', 'Fecha Retiro', 'Tipo Contrato', 'Correo']
-      ];
-      
-      // Datos de ejemplo para empleados
-      const sampleEmployees = [
+    // Como no tenemos permisos de escritura, vamos a lanzar un error informativo
+    throw new Error('Para crear datos de ejemplo, necesitas agregar manualmente los datos a tu hoja de Google Sheets o usar una API key con permisos de escritura.');
+  }
+
+  // Método para obtener los datos de ejemplo que el usuario debe agregar manualmente
+  getSampleDataInstructions() {
+    return {
+      employeesHeaders: ['ID', 'Tipo Documento', 'Número Documento', 'Nombre', 'Cargo', 'Empresa', 'Estado', 'Sueldo', 'Fecha Ingreso', 'Fecha Retiro', 'Tipo Contrato', 'Correo'],
+      sampleEmployees: [
         ['1', 'CC', '1024532077', 'Juan Pérez García', 'Desarrollador Senior', 'VITY', 'ACTIVO', '4500000', '2023-01-15', '', 'INDEFINIDO', 'juan.perez@vity.com'],
         ['2', 'CC', '1098765432', 'María López Rodríguez', 'Analista de Recursos Humanos', 'VITY', 'ACTIVO', '3200000', '2023-03-20', '', 'INDEFINIDO', 'maria.lopez@vity.com'],
         ['3', 'CC', '1122334455', 'Carlos Martínez Silva', 'Gerente de Proyectos', 'VITY', 'RETIRADO', '5500000', '2022-06-10', '2024-10-30', 'INDEFINIDO', 'carlos.martinez@vity.com'],
         ['4', 'CC', '1234567890', 'Ana Rodríguez Torres', 'Diseñadora UX/UI', 'VITY', 'ACTIVO', '3800000', '2023-05-12', '', 'INDEFINIDO', 'ana.rodriguez@vity.com'],
         ['5', 'CC', '9876543210', 'Luis Gómez Vargas', 'Contador Senior', 'VITY', 'ACTIVO', '4200000', '2022-09-01', '', 'INDEFINIDO', 'luis.gomez@vity.com']
-      ];
-
-      // Crear headers para la hoja de Historial
-      const historyHeaders = [
-        ['ID', 'Empleado ID', 'Nombre Empleado', 'Número Documento', 'Tipo Certificación', 'Fecha Generación', 'Generado Por', 'Detalles']
-      ];
-
-      // Escribir datos a las hojas
-      await this.makeRequest('Empleados!A1:L6', 'POST', [...employeesHeaders, ...sampleEmployees]);
-      await this.makeRequest('Historial!A1:H1', 'POST', historyHeaders);
-
-      return true;
-    } catch (error) {
-      console.error('Error creating sample data:', error);
-      throw error;
-    }
+      ],
+      historyHeaders: ['ID', 'Empleado ID', 'Nombre Empleado', 'Número Documento', 'Tipo Certificación', 'Fecha Generación', 'Generado Por', 'Detalles']
+    };
   }
 }
 

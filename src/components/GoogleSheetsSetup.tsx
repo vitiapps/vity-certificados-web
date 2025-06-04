@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ExternalLink, CheckCircle, AlertCircle, Database, Copy } from 'lucide-react';
+import { ExternalLink, CheckCircle, AlertCircle, Database, Copy, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { googleSheetsService } from '@/services/googleSheetsService';
 
@@ -18,7 +18,7 @@ const GoogleSheetsSetup: React.FC<GoogleSheetsSetupProps> = ({ onSetupComplete }
   const [apiKey, setApiKey] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
-  const [isCreatingData, setIsCreatingData] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -73,25 +73,8 @@ const GoogleSheetsSetup: React.FC<GoogleSheetsSetupProps> = ({ onSetupComplete }
     }
   };
 
-  const handleCreateSampleData = async () => {
-    setIsCreatingData(true);
-    
-    try {
-      await googleSheetsService.createSampleData();
-      toast({
-        title: "¡Datos de ejemplo creados!",
-        description: "Se han agregado datos de ejemplo a tu hoja de cálculo",
-      });
-    } catch (error) {
-      console.error('Error creating sample data:', error);
-      toast({
-        title: "Error",
-        description: "No se pudieron crear los datos de ejemplo. Verifica que tengas permisos de escritura en la hoja.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsCreatingData(false);
-    }
+  const handleShowInstructions = () => {
+    setShowInstructions(!showInstructions);
   };
 
   const copySheetTemplate = () => {
@@ -110,16 +93,55 @@ const GoogleSheetsSetup: React.FC<GoogleSheetsSetupProps> = ({ onSetupComplete }
             </div>
             
             <Button 
-              onClick={handleCreateSampleData}
-              disabled={isCreatingData}
+              onClick={handleShowInstructions}
               className="w-full bg-blue-600 hover:bg-blue-700"
             >
-              <Database className="h-4 w-4 mr-2" />
-              {isCreatingData ? 'Creando datos...' : 'Agregar Datos de Ejemplo'}
+              <FileText className="h-4 w-4 mr-2" />
+              {showInstructions ? 'Ocultar Instrucciones' : 'Ver Instrucciones para Agregar Datos'}
             </Button>
             
+            {showInstructions && (
+              <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
+                <h3 className="font-semibold text-gray-800">Datos que debes agregar manualmente a tu hoja:</h3>
+                
+                <div className="space-y-3">
+                  <div>
+                    <h4 className="font-medium text-gray-700">Pestaña "Empleados" - Headers (Fila 1):</h4>
+                    <div className="text-sm text-gray-600 bg-white p-2 rounded border font-mono">
+                      ID | Tipo Documento | Número Documento | Nombre | Cargo | Empresa | Estado | Sueldo | Fecha Ingreso | Fecha Retiro | Tipo Contrato | Correo
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-medium text-gray-700">Empleados de ejemplo (agrega en las filas 2-6):</h4>
+                    <div className="text-xs text-gray-600 bg-white p-2 rounded border font-mono space-y-1">
+                      <div>1 | CC | 1024532077 | Juan Pérez García | Desarrollador Senior | VITY | ACTIVO | 4500000 | 2023-01-15 | | INDEFINIDO | juan.perez@vity.com</div>
+                      <div>2 | CC | 1098765432 | María López Rodríguez | Analista de Recursos Humanos | VITY | ACTIVO | 3200000 | 2023-03-20 | | INDEFINIDO | maria.lopez@vity.com</div>
+                      <div>3 | CC | 1122334455 | Carlos Martínez Silva | Gerente de Proyectos | VITY | RETIRADO | 5500000 | 2022-06-10 | 2024-10-30 | INDEFINIDO | carlos.martinez@vity.com</div>
+                      <div>4 | CC | 1234567890 | Ana Rodríguez Torres | Diseñadora UX/UI | VITY | ACTIVO | 3800000 | 2023-05-12 | | INDEFINIDO | ana.rodriguez@vity.com</div>
+                      <div>5 | CC | 9876543210 | Luis Gómez Vargas | Contador Senior | VITY | ACTIVO | 4200000 | 2022-09-01 | | INDEFINIDO | luis.gomez@vity.com</div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-medium text-gray-700">Pestaña "Historial" - Headers (Fila 1):</h4>
+                    <div className="text-sm text-gray-600 bg-white p-2 rounded border font-mono">
+                      ID | Empleado ID | Nombre Empleado | Número Documento | Tipo Certificación | Fecha Generación | Generado Por | Detalles
+                    </div>
+                  </div>
+                </div>
+                
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>Importante:</strong> Copia estos datos exactamente como se muestran, separando cada campo en una columna diferente. Una vez agregados, podrás probar la aplicación con las cédulas: 1024532077, 1098765432, 1122334455, 1234567890, 9876543210
+                  </AlertDescription>
+                </Alert>
+              </div>
+            )}
+            
             <p className="text-sm text-gray-600">
-              Los datos de ejemplo incluyen 3 empleados de prueba que puedes usar para probar la aplicación.
+              Como la API key actual es de solo lectura, debes agregar los datos manualmente a tu hoja de Google Sheets.
             </p>
           </div>
         </CardContent>
