@@ -187,8 +187,8 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
             pointer-events: none;
         }
         .watermark img {
-            max-width: 600px;
-            max-height: 600px;
+            max-width: 400px;
+            max-height: 400px;
             width: auto;
             height: auto;
         }
@@ -203,9 +203,10 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
             margin-bottom: 40px;
         }
         .logo {
-            max-height: 150px;
+            max-height: 120px;
             width: auto;
             margin-bottom: 20px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
         }
         .company-name {
             font-size: 32px;
@@ -371,7 +372,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
                   <img 
                     src={companyConfig.logoUrl} 
                     alt="Watermark" 
-                    className="max-w-[600px] max-h-[600px] transform rotate-45" 
+                    className="max-w-96 max-h-96 transform rotate-45" 
                   />
                 </div>
               )}
@@ -379,7 +380,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
               <div className="relative z-10">
                 {/* Encabezado de la empresa */}
                 <div className="text-center border-b pb-6">
-                  {companyConfig?.logoUrl ? <img src={companyConfig.logoUrl} alt="Logo" className="h-36 w-auto mx-auto mb-4" /> : <img src="/lovable-uploads/09667bc0-9af8-468b-9c4c-d4844d158bc0.png" alt="Vity Logo" className="h-36 w-auto mx-auto mb-4" />}
+                  {companyConfig?.logoUrl ? <img src={companyConfig.logoUrl} alt="Logo" className="h-24 w-auto mx-auto mb-4 filter drop-shadow-md" /> : <img src="/lovable-uploads/09667bc0-9af8-468b-9c4c-d4844d158bc0.png" alt="Vity Logo" className="h-24 w-auto mx-auto mb-4 filter drop-shadow-md" />}
                   
                   <h1 className="text-3xl font-bold mb-2" style={{color: companyConfig?.headerColor || '#22c55e'}}>
                     {companyConfig?.companyName || employeeData.empresa.toUpperCase()}
