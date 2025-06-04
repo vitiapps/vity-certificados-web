@@ -369,7 +369,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
               <div className="relative z-10">
                 {/* Encabezado de la empresa */}
                 <div className="text-center border-b pb-6">
-                  {companyConfig?.logoUrl ? <img src={companyConfig.logoUrl} alt="Logo" className="h-30 w-auto mx-auto mb-4" /> : <img src="/lovable-uploads/09667bc0-9af8-468b-9c4c-d4844d158bc0.png" alt="Vity Logo" className="h-36 w-auto mx-auto mb-4" />}
+                  {companyConfig?.logoUrl ? <img src={companyConfig.logoUrl} alt="Logo" className="h-48 w-auto mx-auto mb-4" /> : <img src="/lovable-uploads/09667bc0-9af8-468b-9c4c-d4844d158bc0.png" alt="Vity Logo" className="h-36 w-auto mx-auto mb-4" />}
                   
                   
                   <p className="text-gray-600">{companyConfig?.nit || 'NIT: 900.123.456-7'}</p>
