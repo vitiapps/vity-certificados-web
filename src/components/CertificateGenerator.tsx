@@ -174,6 +174,27 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
             padding: 60px;
             border-radius: 10px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        .watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            opacity: 0.05;
+            z-index: 1;
+            pointer-events: none;
+        }
+        .watermark img {
+            max-width: 400px;
+            max-height: 400px;
+            width: auto;
+            height: auto;
+        }
+        .certificate-content {
+            position: relative;
+            z-index: 2;
         }
         .header {
             text-align: center;
@@ -182,9 +203,10 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
             margin-bottom: 40px;
         }
         .logo {
-            max-height: 80px;
+            max-height: 120px;
             width: auto;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
         }
         .company-name {
             font-size: 32px;
@@ -258,43 +280,51 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
 </head>
 <body>
     <div class="certificate">
-        <div class="header">
-            ${logoUrl ? `<img src="${logoUrl}" alt="Logo" class="logo" />` : ''}
-            <div class="company-name">${companyName}</div>
-            <div style="color: #6b7280;">${nit}</div>
-            <div style="color: #6b7280;">${city}</div>
-        </div>
-
-        <div style="text-align: center;">
-            <h1 class="certificate-title">CERTIFICACIÓN LABORAL</h1>
-            <div style="color: #6b7280; margin-bottom: 40px;">
-                Fecha de expedición: ${currentDate}
-            </div>
-        </div>
-
-        <div class="content">
-            ${certificateContent}
-        </div>
-
-        ${signatories.length > 0 ? `
-        <div class="signatures">
-            ${signatories.map(signatory => `
-                <div class="signature-block">
-                    ${signatory.signature ? 
-                      `<img src="${signatory.signature}" alt="Firma" class="signature-image" />` : 
-                      '<div class="signature-line"></div>'
-                    }
-                    <div class="signature-name">${signatory.name}</div>
-                    <div class="signature-position">${signatory.position}</div>
-                </div>
-            `).join('')}
+        ${logoUrl ? `
+        <div class="watermark">
+            <img src="${logoUrl}" alt="Watermark" />
         </div>
         ` : ''}
         
-        <div class="footer">
-            <p>Este certificado es válido con firma digital y código de verificación</p>
-            <div class="verification-code">Código: ${verificationCode}</div>
-            ${footerText ? `<div style="margin-top: 20px; font-size: 12px; white-space: pre-line;">${footerText}</div>` : ''}
+        <div class="certificate-content">
+            <div class="header">
+                ${logoUrl ? `<img src="${logoUrl}" alt="Logo" class="logo" />` : ''}
+                <div class="company-name">${companyName}</div>
+                <div style="color: #6b7280;">${nit}</div>
+                <div style="color: #6b7280;">${city}</div>
+            </div>
+
+            <div style="text-align: center;">
+                <h1 class="certificate-title">CERTIFICACIÓN LABORAL</h1>
+                <div style="color: #6b7280; margin-bottom: 40px;">
+                    Fecha de expedición: ${currentDate}
+                </div>
+            </div>
+
+            <div class="content">
+                ${certificateContent}
+            </div>
+
+            ${signatories.length > 0 ? `
+            <div class="signatures">
+                ${signatories.map(signatory => `
+                    <div class="signature-block">
+                        ${signatory.signature ? 
+                          `<img src="${signatory.signature}" alt="Firma" class="signature-image" />` : 
+                          '<div class="signature-line"></div>'
+                        }
+                        <div class="signature-name">${signatory.name}</div>
+                        <div class="signature-position">${signatory.position}</div>
+                    </div>
+                `).join('')}
+            </div>
+            ` : ''}
+            
+            <div class="footer">
+                <p>Este certificado es válido con firma digital y código de verificación</p>
+                <div class="verification-code">Código: ${verificationCode}</div>
+                ${footerText ? `<div style="margin-top: 20px; font-size: 12px; white-space: pre-line;">${footerText}</div>` : ''}
+            </div>
         </div>
     </div>
 </body>
@@ -335,58 +365,74 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
           {isGenerating ? <div className="text-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-vity-green mx-auto mb-4"></div>
               <p className="text-gray-600">Generando tu certificado...</p>
-            </div> : <div className="space-y-6">
-              {/* Encabezado de la empresa */}
-              <div className="text-center border-b pb-6">
-                {companyConfig?.logoUrl ? <img src={companyConfig.logoUrl} alt="Logo" className="h-16 w-auto mx-auto mb-4" /> : <img src="/lovable-uploads/09667bc0-9af8-468b-9c4c-d4844d158bc0.png" alt="Vity Logo" className="h-16 w-auto mx-auto mb-4" />}
-                
-                <p className="text-gray-600">{companyConfig?.nit || 'NIT: 900.123.456-7'}</p>
-                <p className="text-gray-600">{companyConfig?.city || 'Bogotá, Colombia'}</p>
-              </div>
+            </div> : <div className="space-y-6 relative">
+              {/* Marca de agua de fondo */}
+              {companyConfig?.logoUrl && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-5 z-0">
+                  <img 
+                    src={companyConfig.logoUrl} 
+                    alt="Watermark" 
+                    className="max-w-96 max-h-96 transform rotate-45" 
+                  />
+                </div>
+              )}
+              
+              <div className="relative z-10">
+                {/* Encabezado de la empresa */}
+                <div className="text-center border-b pb-6">
+                  {companyConfig?.logoUrl ? <img src={companyConfig.logoUrl} alt="Logo" className="h-24 w-auto mx-auto mb-4 filter drop-shadow-md" /> : <img src="/lovable-uploads/09667bc0-9af8-468b-9c4c-d4844d158bc0.png" alt="Vity Logo" className="h-24 w-auto mx-auto mb-4 filter drop-shadow-md" />}
+                  
+                  <h1 className="text-3xl font-bold mb-2" style={{color: companyConfig?.headerColor || '#22c55e'}}>
+                    {companyConfig?.companyName || employeeData.empresa.toUpperCase()}
+                  </h1>
+                  <p className="text-gray-600">{companyConfig?.nit || 'NIT: 900.123.456-7'}</p>
+                  <p className="text-gray-600">{companyConfig?.city || 'Bogotá, Colombia'}</p>
+                </div>
 
-              {/* Título del certificado */}
-              <div className="text-center">
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                  CERTIFICACIÓN LABORAL
-                </h2>
-                <p className="text-gray-600">
-                  Fecha de expedición: {new Date().toLocaleDateString('es-ES')}
-                </p>
-              </div>
+                {/* Título del certificado */}
+                <div className="text-center">
+                  <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                    CERTIFICACIÓN LABORAL
+                  </h2>
+                  <p className="text-gray-600">
+                    Fecha de expedición: {new Date().toLocaleDateString('es-ES')}
+                  </p>
+                </div>
 
-              {/* Contenido del certificado */}
-              <div className="bg-gray-50 p-6 rounded-lg">
-                <p className="text-gray-800 leading-relaxed text-justify">
-                  {getCertificateContent()}
-                </p>
-              </div>
+                {/* Contenido del certificado */}
+                <div className="bg-gray-50 p-6 rounded-lg">
+                  <p className="text-gray-800 leading-relaxed text-justify">
+                    {getCertificateContent()}
+                  </p>
+                </div>
 
-              {/* Firmantes */}
-              {companyConfig?.signatories && companyConfig.signatories.length > 0 && <div className="flex justify-center mt-16">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                    {companyConfig.signatories.map((signatory, index) => <div key={index} className="text-center">
-                        {signatory.signature ? (
-                          <img 
-                            src={signatory.signature} 
-                            alt="Firma" 
-                            className="max-h-16 w-auto mx-auto mb-2" 
-                          />
-                        ) : (
-                          <div className="border-t-2 border-gray-800 w-48 mb-2 mx-auto"></div>
-                        )}
-                        <p className="font-bold text-sm">{signatory.name}</p>
-                        <p className="text-xs text-gray-600">{signatory.position}</p>
-                      </div>)}
-                  </div>
-                </div>}
-
-              {/* Pie del certificado */}
-              <div className="text-center text-sm text-gray-600 border-t pt-6">
-                <p>Este certificado es válido con firma digital y código de verificación</p>
-                <p className="font-mono text-xs mt-2">Código: {verificationCode}</p>
-                {companyConfig?.footerText && <div className="mt-4 text-xs whitespace-pre-line">
-                    {companyConfig.footerText}
+                {/* Firmantes */}
+                {companyConfig?.signatories && companyConfig.signatories.length > 0 && <div className="flex justify-center mt-16">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                      {companyConfig.signatories.map((signatory, index) => <div key={index} className="text-center">
+                          {signatory.signature ? (
+                            <img 
+                              src={signatory.signature} 
+                              alt="Firma" 
+                              className="max-h-16 w-auto mx-auto mb-2" 
+                            />
+                          ) : (
+                            <div className="border-t-2 border-gray-800 w-48 mb-2 mx-auto"></div>
+                          )}
+                          <p className="font-bold text-sm">{signatory.name}</p>
+                          <p className="text-xs text-gray-600">{signatory.position}</p>
+                        </div>)}
+                    </div>
                   </div>}
+
+                {/* Pie del certificado */}
+                <div className="text-center text-sm text-gray-600 border-t pt-6">
+                  <p>Este certificado es válido con firma digital y código de verificación</p>
+                  <p className="font-mono text-xs mt-2">Código: {verificationCode}</p>
+                  {companyConfig?.footerText && <div className="mt-4 text-xs whitespace-pre-line">
+                      {companyConfig.footerText}
+                    </div>}
+                </div>
               </div>
             </div>}
         </CardContent>
