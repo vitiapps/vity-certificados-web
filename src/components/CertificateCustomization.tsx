@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,6 +37,7 @@ const CertificateCustomization: React.FC = () => {
   });
   const [logoPreview, setLogoPreview] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const signatureInputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -146,11 +148,64 @@ const CertificateCustomization: React.FC = () => {
     }
   };
 
+  const handleSignatureUpload = (event: React.ChangeEvent<HTMLInputElement>, signatoryIndex: number) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validar tipo de archivo
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Error",
+          description: "Por favor selecciona un archivo de imagen válido",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Validar tamaño (máximo 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "Error",
+          description: "El archivo es demasiado grande. Máximo 5MB",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setCurrentConfig(prev => ({
+          ...prev,
+          signatories: prev.signatories.map((sig, i) => 
+            i === signatoryIndex ? { ...sig, signature: result } : sig
+          )
+        }));
+        toast({
+          title: "Firma cargada",
+          description: "La firma se ha cargado correctamente"
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const removeLogo = () => {
     setLogoPreview('');
     setCurrentConfig(prev => ({ ...prev, logoUrl: '' }));
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
+    }
+  };
+
+  const removeSignature = (signatoryIndex: number) => {
+    setCurrentConfig(prev => ({
+      ...prev,
+      signatories: prev.signatories.map((sig, i) => 
+        i === signatoryIndex ? { ...sig, signature: '' } : sig
+      )
+    }));
+    if (signatureInputRefs.current[signatoryIndex]) {
+      signatureInputRefs.current[signatoryIndex]!.value = '';
     }
   };
 
@@ -166,6 +221,8 @@ const CertificateCustomization: React.FC = () => {
       ...prev,
       signatories: prev.signatories.filter((_, i) => i !== index)
     }));
+    // Limpiar la referencia del input
+    signatureInputRefs.current = signatureInputRefs.current.filter((_, i) => i !== index);
   };
 
   const updateSignatory = (index: number, field: 'name' | 'position', value: string) => {
@@ -350,6 +407,52 @@ const CertificateCustomization: React.FC = () => {
                         value={signatory.position}
                         onChange={(e) => updateSignatory(index, 'position', e.target.value)}
                       />
+                      
+                      {/* Sección de firma */}
+                      <div className="space-y-2">
+                        <Label className="text-sm">Firma</Label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            ref={(el) => signatureInputRefs.current[index] = el}
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleSignatureUpload(e, index)}
+                            className="hidden"
+                            id={`signature-upload-${index}`}
+                          />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => signatureInputRefs.current[index]?.click()}
+                            className="flex items-center gap-1"
+                          >
+                            <Upload size={14} />
+                            Cargar Firma
+                          </Button>
+                          {signatory.signature && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => removeSignature(index)}
+                              className="text-red-600 hover:bg-red-50"
+                            >
+                              <X size={14} />
+                            </Button>
+                          )}
+                        </div>
+                        
+                        {signatory.signature && (
+                          <div className="border rounded p-2 bg-gray-50">
+                            <p className="text-xs text-gray-600 mb-1">Vista previa:</p>
+                            <img
+                              src={signatory.signature}
+                              alt="Signature preview"
+                              className="max-h-12 w-auto border rounded"
+                            />
+                          </div>
+                        )}
+                      </div>
+
                       {currentConfig.signatories.length > 1 && (
                         <Button
                           variant="outline"
