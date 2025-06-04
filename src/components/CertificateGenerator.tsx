@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Download, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabaseEmployeeService } from '@/services/supabaseEmployeeService';
+
 interface CertificateGeneratorProps {
   employeeData: any;
   certificateType: string;
@@ -220,6 +221,11 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
             margin-bottom: 10px;
             width: 250px;
         }
+        .signature-image {
+            max-height: 60px;
+            width: auto;
+            margin-bottom: 10px;
+        }
         .signature-name {
             font-weight: bold;
             font-size: 14px;
@@ -274,14 +280,17 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
         <div class="signatures">
             ${signatories.map(signatory => `
                 <div class="signature-block">
-                    <div class="signature-line"></div>
+                    ${signatory.signature ? 
+                      `<img src="${signatory.signature}" alt="Firma" class="signature-image" />` : 
+                      '<div class="signature-line"></div>'
+                    }
                     <div class="signature-name">${signatory.name}</div>
                     <div class="signature-position">${signatory.position}</div>
                 </div>
             `).join('')}
         </div>
         ` : ''}
-
+        
         <div class="footer">
             <p>Este certificado es válido con firma digital y código de verificación</p>
             <div class="verification-code">Código: ${verificationCode}</div>
@@ -356,7 +365,15 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
               {companyConfig?.signatories && companyConfig.signatories.length > 0 && <div className="flex justify-center mt-16">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                     {companyConfig.signatories.map((signatory, index) => <div key={index} className="text-center">
-                        <div className="border-t-2 border-gray-800 w-48 mb-2"></div>
+                        {signatory.signature ? (
+                          <img 
+                            src={signatory.signature} 
+                            alt="Firma" 
+                            className="max-h-16 w-auto mx-auto mb-2" 
+                          />
+                        ) : (
+                          <div className="border-t-2 border-gray-800 w-48 mb-2 mx-auto"></div>
+                        )}
                         <p className="font-bold text-sm">{signatory.name}</p>
                         <p className="text-xs text-gray-600">{signatory.position}</p>
                       </div>)}
