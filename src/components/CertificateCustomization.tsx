@@ -1,12 +1,11 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Save, Plus, Trash2 } from 'lucide-react';
+import { Upload, Save, Plus, Trash2, X } from 'lucide-react';
 
 interface CompanyCertificateConfig {
   id: string;
@@ -35,11 +34,17 @@ const CertificateCustomization: React.FC = () => {
     signatories: [{ name: '', position: '' }],
     headerColor: '#22c55e'
   });
+  const [logoPreview, setLogoPreview] = useState<string>('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     loadCompanyConfigs();
   }, []);
+
+  useEffect(() => {
+    setLogoPreview(currentConfig.logoUrl || '');
+  }, [currentConfig.logoUrl]);
 
   const loadCompanyConfigs = () => {
     const saved = localStorage.getItem('certificate_company_configs');
@@ -104,6 +109,51 @@ const CertificateCustomization: React.FC = () => {
     }
   };
 
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validar tipo de archivo
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Error",
+          description: "Por favor selecciona un archivo de imagen válido",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Validar tamaño (máximo 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "Error",
+          description: "El archivo es demasiado grande. Máximo 5MB",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setLogoPreview(result);
+        setCurrentConfig(prev => ({ ...prev, logoUrl: result }));
+        toast({
+          title: "Logo cargado",
+          description: "El logo se ha cargado correctamente"
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeLogo = () => {
+    setLogoPreview('');
+    setCurrentConfig(prev => ({ ...prev, logoUrl: '' }));
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const addSignatory = () => {
     setCurrentConfig(prev => ({
       ...prev,
@@ -160,6 +210,7 @@ const CertificateCustomization: React.FC = () => {
       headerColor: '#22c55e'
     });
     setSelectedCompany('');
+    setLogoPreview('');
   };
 
   return (
@@ -224,13 +275,52 @@ const CertificateCustomization: React.FC = () => {
               </div>
 
               <div>
-                <Label htmlFor="logoUrl">URL del Logo</Label>
-                <Input
-                  id="logoUrl"
-                  value={currentConfig.logoUrl || ''}
-                  onChange={(e) => setCurrentConfig(prev => ({ ...prev, logoUrl: e.target.value }))}
-                  placeholder="/path/to/logo.png"
-                />
+                <Label>Logo de la Empresa</Label>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      id="logo-upload"
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex items-center gap-2"
+                    >
+                      <Upload size={16} />
+                      Cargar Logo
+                    </Button>
+                    {logoPreview && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={removeLogo}
+                        className="text-red-600 hover:bg-red-50"
+                      >
+                        <X size={16} />
+                      </Button>
+                    )}
+                  </div>
+                  
+                  {logoPreview && (
+                    <div className="border rounded-lg p-3 bg-gray-50">
+                      <p className="text-sm text-gray-600 mb-2">Vista previa:</p>
+                      <img
+                        src={logoPreview}
+                        alt="Logo preview"
+                        className="max-h-20 w-auto border rounded"
+                      />
+                    </div>
+                  )}
+                  
+                  <p className="text-xs text-gray-500">
+                    Formatos admitidos: JPG, PNG, GIF. Tamaño máximo: 5MB
+                  </p>
+                </div>
               </div>
 
               <div>
