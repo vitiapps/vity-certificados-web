@@ -224,7 +224,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
             position: absolute;
             top: 0;
             right: 0;
-            max-height: 80px;
+            max-height: 60px;
             width: auto;
         }
         .company-info {
@@ -253,8 +253,9 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
         .signatures {
             margin-top: 80px;
             display: flex;
-            justify-content: space-around;
+            justify-content: center;
             flex-wrap: wrap;
+            gap: 40px;
         }
         .signature-block {
             text-align: center;
@@ -321,7 +322,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
 
             <div style="text-align: center;">
                 <h1 class="certificate-title">CERTIFICACIÓN LABORAL</h1>
-                <div style="color: #6b7280; margin-bottom: 40px;">
+                <div style="color: #6b7280; margin-bottom: 60px;">
                     Fecha de expedición: ${currentDate}
                 </div>
             </div>
@@ -362,13 +363,13 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
         return `La empresa ${employeeData.empresa} certifica que ${employeeData.nombre}, identificado(a) con ${employeeData.tipo_documento} No. ${employeeData.numero_documento}, se encuentra vinculado(a) laboralmente desde el ${formatDate(employeeData.fecha_ingreso)} desempeñando el cargo de ${employeeData.cargo} con un salario de ${formatCurrency(employeeData.sueldo)}, y a la fecha continúa prestando sus servicios de manera activa bajo contrato ${employeeData.tipo_contrato}.`;
       
       case 'empleado-retirado':
-        return `La empresa ${employeeData.empresa} certifica que ${employeeData.nombre}, identificado(a) con ${employeeData.tipo_documento} No. ${employeeData.numero_documento}, laboró en la empresa desde el ${formatDate(employeeData.fecha_ingreso)} hasta el ${formatDate(employeeData.fecha_retiro)}, desempeñando el cargo de ${employeeData.cargo} con un salario de ${formatCurrency(employeeData.sueldo)} bajo contrato ${employeeData.tipo_contrato}, fecha en la cual se retiró de la organización.`;
+        return `La empresa ${employeeData.empresa} certifica que ${empleeeData.nombre}, identificado(a) con ${employeeData.tipo_documento} No. ${employeeData.numero_documento}, laboró en la empresa desde el ${formatDate(employeeData.fecha_ingreso)} hasta el ${formatDate(employeeData.fecha_retiro)}, desempeñando el cargo de ${employeeData.cargo} con un salario de ${formatCurrency(employeeData.sueldo)} bajo contrato ${employeeData.tipo_contrato}, fecha en la cual se retiró de la organización.`;
       
       case 'historial-completo':
         const statusText = employeeData.estado === 'ACTIVO' 
           ? `se encuentra vinculado(a) laboralmente desde el ${formatDate(employeeData.fecha_ingreso)} y a la fecha continúa prestando sus servicios` 
           : `laboró en la empresa desde el ${formatDate(employeeData.fecha_ingreso)} hasta el ${formatDate(employeeData.fecha_retiro)}`;
-        return `La empresa ${employeeData.empresa} certifica que ${employeeData.nombre}, identificado(a) con ${employeeData.tipo_documento} No. ${employeeData.numero_documento}, ${statusText} desempeñando el cargo de ${employeeData.cargo} con un salario de ${formatCurrency(employeeData.sueldo)} bajo contrato ${employeeData.tipo_contrato}. Estado actual: ${employeeData.estado}.`;
+        return `La empresa ${employeeData.empresa} certifica que ${empleeeData.nombre}, identificado(a) con ${employeeData.tipo_documento} No. ${empleeeData.numero_documento}, ${statusText} desempeñando el cargo de ${empleeeData.cargo} con un salario de ${formatCurrency(empleeeData.sueldo)} bajo contrato ${empleeeData.tipo_contrato}. Estado actual: ${empleeeData.estado}.`;
       
       default:
         return '';
@@ -393,7 +394,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
       </Card>
 
       {/* Vista previa del certificado */}
-      <Card className="border-0 shadow-xl bg-white backdrop-blur-sm">
+      <Card className="border-0 shadow-xl bg-transparent backdrop-blur-sm">
         <CardContent className="p-8">
           {isGenerating ? (
             <div className="text-center py-12">
@@ -401,7 +402,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
               <p className="text-gray-600">Generando tu certificado...</p>
             </div>
           ) : (
-            <div className="space-y-6 relative">
+            <div className="space-y-6 relative bg-white rounded-lg p-8 shadow-lg">
               {/* Marca de agua de fondo */}
               {companyConfig?.logoUrl && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-5 z-0">
@@ -420,13 +421,13 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
                     <img 
                       src={companyConfig.logoUrl} 
                       alt="Logo" 
-                      className="absolute top-0 right-0 h-20 w-auto" 
+                      className="absolute top-0 right-0 h-16 w-auto" 
                     />
                   )}
                   
                   <div className="max-w-[60%]">
                     <h1 className="text-3xl font-bold mb-2" style={{color: companyConfig?.headerColor || '#22c55e'}}>
-                      {companyConfig?.companyName || employeeData.empresa.toUpperCase()}
+                      {companyConfig?.companyName || empleeeData.empresa.toUpperCase()}
                     </h1>
                     <p className="text-gray-600">{companyConfig?.nit || 'NIT: 900.123.456-7'}</p>
                     <p className="text-gray-600">{companyConfig?.city || 'Bogotá, Colombia'}</p>
@@ -434,17 +435,17 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
                 </div>
 
                 {/* Título del certificado */}
-                <div className="text-center">
+                <div className="text-center mt-8">
                   <h2 className="text-2xl font-bold text-gray-800 mb-2">
                     CERTIFICACIÓN LABORAL
                   </h2>
-                  <p className="text-gray-600">
+                  <p className="text-gray-600 mb-12">
                     Fecha de expedición: {new Date().toLocaleDateString('es-ES')}
                   </p>
                 </div>
 
                 {/* Contenido del certificado */}
-                <div className="bg-gray-50 p-6 rounded-lg">
+                <div className="bg-gray-50 p-6 rounded-lg mb-12">
                   <p className="text-gray-800 leading-relaxed text-justify">
                     {getCertificateContent()}
                   </p>
@@ -453,7 +454,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
                 {/* Firmantes */}
                 {companyConfig?.signatories && companyConfig.signatories.length > 0 && (
                   <div className="flex justify-center mt-16">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                    <div className="flex justify-center gap-16 flex-wrap">
                       {companyConfig.signatories.map((signatory, index) => (
                         <div key={index} className="text-center">
                           {signatory.signature ? (
@@ -474,7 +475,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
                 )}
 
                 {/* Pie del certificado */}
-                <div className="text-center text-sm text-gray-600 border-t pt-6">
+                <div className="text-center text-sm text-gray-600 border-t pt-6 mt-12">
                   <p>Este certificado es válido con firma digital y código de verificación</p>
                   <p className="font-mono text-xs mt-2">Código: {verificationCode}</p>
                   {companyConfig?.footerText && (
