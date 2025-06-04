@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { googleSheetsService } from '@/services/googleSheetsService';
 
 interface CedulaFormProps {
   onCedulaValidated: (cedula: string, employeeData: any) => void;
@@ -31,22 +31,8 @@ const CedulaForm: React.FC<CedulaFormProps> = ({ onCedulaValidated }) => {
     setIsLoading(true);
 
     try {
-      // Buscar empleado en la base de datos de Supabase
-      const { data: employee, error } = await supabase
-        .from('empleados')
-        .select('*')
-        .eq('numero_documento', cedula.trim())
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error searching employee:', error);
-        toast({
-          title: "Error",
-          description: "Hubo un problema al buscar en la base de datos. Intenta nuevamente.",
-          variant: "destructive"
-        });
-        return;
-      }
+      // Buscar empleado en Google Sheets
+      const employee = await googleSheetsService.findEmployeeByDocument(cedula.trim());
 
       if (employee) {
         toast({
@@ -62,10 +48,10 @@ const CedulaForm: React.FC<CedulaFormProps> = ({ onCedulaValidated }) => {
         });
       }
     } catch (error) {
-      console.error('Unexpected error:', error);
+      console.error('Error searching employee:', error);
       toast({
         title: "Error",
-        description: "Hubo un error inesperado. Intenta nuevamente.",
+        description: "Hubo un error al buscar en la base de datos. Verifica la configuración de Google Sheets.",
         variant: "destructive"
       });
     } finally {

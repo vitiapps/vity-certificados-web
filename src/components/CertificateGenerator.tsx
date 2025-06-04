@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Download, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { googleSheetsService } from '@/services/googleSheetsService';
 
 interface CertificateGeneratorProps {
   employeeData: any;
@@ -44,18 +43,15 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
   };
 
   useEffect(() => {
-    // Auto-generar el certificado al cargar el componente
     generateCertificate();
   }, []);
 
   const generateCertificate = async () => {
     setIsGenerating(true);
     
-    // Generar código de verificación
     const generatedCode = `VTY-${employeeData.numero_documento}-${Date.now().toString().slice(-6)}`;
     setVerificationCode(generatedCode);
     
-    // Simular generación del certificado
     setTimeout(async () => {
       setIsGenerating(false);
       setIsGenerated(true);
@@ -69,7 +65,6 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
         codigo: generatedCode
       });
 
-      // Registrar en el historial con el código de verificación
       await saveCertificateToHistory(generatedCode);
       
       toast({
@@ -81,25 +76,24 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
 
   const saveCertificateToHistory = async (code: string) => {
     try {
-      const { error } = await supabase
-        .from('certificaciones_historico')
-        .insert({
-          empleado_id: employeeData.id,
-          nombre_empleado: employeeData.nombre,
-          numero_documento: employeeData.numero_documento,
-          tipo_certificacion: certificateType,
-          generado_por: 'Usuario Web',
-          detalles: {
-            empresa: employeeData.empresa,
-            cargo: employeeData.cargo,
-            estado: employeeData.estado,
-            sueldo: employeeData.sueldo,
-            codigo_verificacion: code
-          }
-        });
+      const saved = await googleSheetsService.saveCertificationHistory({
+        empleado_id: employeeData.id,
+        nombre_empleado: employeeData.nombre,
+        numero_documento: employeeData.numero_documento,
+        tipo_certificacion: certificateType,
+        fecha_generacion: new Date().toISOString(),
+        generado_por: 'Usuario Web',
+        detalles: {
+          empresa: employeeData.empresa,
+          cargo: employeeData.cargo,
+          estado: employeeData.estado,
+          sueldo: employeeData.sueldo,
+          codigo_verificacion: code
+        }
+      });
 
-      if (error) {
-        console.error('Error saving to history:', error);
+      if (!saved) {
+        console.error('Error saving to history');
       }
     } catch (error) {
       console.error('Error saving certificate to history:', error);
@@ -108,24 +102,17 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
 
   const downloadCertificate = () => {
     try {
-      // Crear el contenido HTML del certificado
       const certificateHTML = generateCertificateHTML();
-      
-      // Crear un blob con el contenido HTML
       const blob = new Blob([certificateHTML], { type: 'text/html' });
       const url = URL.createObjectURL(blob);
       
-      // Crear un elemento de descarga
       const link = document.createElement('a');
       link.href = url;
       link.download = `certificado_laboral_${employeeData.numero_documento}_${Date.now()}.html`;
       
-      // Ejecutar la descarga
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
-      // Limpiar la URL del objeto
       URL.revokeObjectURL(url);
       
       toast({
