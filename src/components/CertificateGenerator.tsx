@@ -5,14 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { Download, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabaseEmployeeService } from '@/services/supabaseEmployeeService';
-
 interface CertificateGeneratorProps {
   employeeData: any;
   certificateType: string;
   onBack: () => void;
   onStartOver: () => void;
 }
-
 interface CompanyCertificateConfig {
   id: string;
   companyName: string;
@@ -28,7 +26,6 @@ interface CompanyCertificateConfig {
   headerColor: string;
   footerText?: string;
 }
-
 const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
   employeeData,
   certificateType,
@@ -39,32 +36,27 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
   const [isGenerated, setIsGenerated] = useState(false);
   const [verificationCode, setVerificationCode] = useState('');
   const [companyConfig, setCompanyConfig] = useState<CompanyCertificateConfig | null>(null);
-  const { toast } = useToast();
-
+  const {
+    toast
+  } = useToast();
   const certificateTypeNames = {
     'empleado-activo': 'Empleado Activo',
     'empleado-retirado': 'Empleado Retirado',
     'historial-completo': 'Historial Completo'
   };
-
   useEffect(() => {
     loadCompanyConfig();
     generateCertificate();
   }, []);
-
   const loadCompanyConfig = () => {
     const saved = localStorage.getItem('certificate_company_configs');
     if (saved) {
       const configs: CompanyCertificateConfig[] = JSON.parse(saved);
       // Buscar configuración que coincida con la empresa del empleado
-      const config = configs.find(c => 
-        c.companyName.toLowerCase().includes(employeeData.empresa.toLowerCase()) ||
-        employeeData.empresa.toLowerCase().includes(c.companyName.toLowerCase())
-      );
+      const config = configs.find(c => c.companyName.toLowerCase().includes(employeeData.empresa.toLowerCase()) || employeeData.empresa.toLowerCase().includes(c.companyName.toLowerCase()));
       setCompanyConfig(config || null);
     }
   };
-
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
@@ -72,21 +64,16 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
       minimumFractionDigits: 0
     }).format(amount);
   };
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-ES');
   };
-
   const generateCertificate = async () => {
     setIsGenerating(true);
-    
     const generatedCode = `VTY-${employeeData.numero_documento}-${Date.now().toString().slice(-6)}`;
     setVerificationCode(generatedCode);
-    
     setTimeout(async () => {
       setIsGenerating(false);
       setIsGenerated(true);
-      
       console.log('Certificado generado para:', {
         cedula: employeeData.numero_documento,
         nombre: employeeData.nombre,
@@ -95,16 +82,13 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
         tipoConsulta: certificateType,
         codigo: generatedCode
       });
-
       await saveCertificateToHistory(generatedCode);
-      
       toast({
         title: "¡Certificado generado!",
-        description: "Tu certificado está listo para descargar",
+        description: "Tu certificado está listo para descargar"
       });
     }, 2000);
   };
-
   const saveCertificateToHistory = async (code: string) => {
     try {
       const saved = await supabaseEmployeeService.saveCertificationHistory({
@@ -122,7 +106,6 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
           codigo_verificacion: code
         }
       });
-
       if (!saved) {
         console.error('Error saving to history');
       }
@@ -130,25 +113,23 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
       console.error('Error saving certificate to history:', error);
     }
   };
-
   const downloadCertificate = () => {
     try {
       const certificateHTML = generateCertificateHTML();
-      const blob = new Blob([certificateHTML], { type: 'text/html' });
+      const blob = new Blob([certificateHTML], {
+        type: 'text/html'
+      });
       const url = URL.createObjectURL(blob);
-      
       const link = document.createElement('a');
       link.href = url;
       link.download = `certificado_laboral_${employeeData.numero_documento}_${Date.now()}.html`;
-      
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      
       toast({
         title: "¡Descarga completada!",
-        description: "Tu certificado se ha descargado correctamente",
+        description: "Tu certificado se ha descargado correctamente"
       });
     } catch (error) {
       console.error('Error al descargar el certificado:', error);
@@ -159,11 +140,10 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
       });
     }
   };
-
   const generateCertificateHTML = () => {
     const certificateContent = getCertificateContent();
     const currentDate = new Date().toLocaleDateString('es-ES');
-    
+
     // Usar configuración personalizada si existe, sino usar valores por defecto
     const companyName = companyConfig?.companyName || employeeData.empresa.toUpperCase();
     const nit = companyConfig?.nit || 'NIT: 900.123.456-7';
@@ -172,7 +152,6 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
     const headerColor = companyConfig?.headerColor || '#22c55e';
     const signatories = companyConfig?.signatories || [];
     const footerText = companyConfig?.footerText;
-
     return `
 <!DOCTYPE html>
 <html lang="es">
@@ -312,29 +291,20 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
 </body>
 </html>`;
   };
-
   const getCertificateContent = () => {
     switch (certificateType) {
       case 'empleado-activo':
         return `La empresa ${employeeData.empresa} certifica que ${employeeData.nombre}, identificado(a) con ${employeeData.tipo_documento} No. ${employeeData.numero_documento}, se encuentra vinculado(a) laboralmente desde el ${formatDate(employeeData.fecha_ingreso)} desempeñando el cargo de ${employeeData.cargo} con un salario de ${formatCurrency(employeeData.sueldo)}, y a la fecha continúa prestando sus servicios de manera activa bajo contrato ${employeeData.tipo_contrato}.`;
-      
       case 'empleado-retirado':
         return `La empresa ${employeeData.empresa} certifica que ${employeeData.nombre}, identificado(a) con ${employeeData.tipo_documento} No. ${employeeData.numero_documento}, laboró en la empresa desde el ${formatDate(employeeData.fecha_ingreso)} hasta el ${formatDate(employeeData.fecha_retiro)}, desempeñando el cargo de ${employeeData.cargo} con un salario de ${formatCurrency(employeeData.sueldo)} bajo contrato ${employeeData.tipo_contrato}, fecha en la cual se retiró de la organización.`;
-      
       case 'historial-completo':
-        const statusText = employeeData.estado === 'ACTIVO' 
-          ? `se encuentra vinculado(a) laboralmente desde el ${formatDate(employeeData.fecha_ingreso)} y a la fecha continúa prestando sus servicios`
-          : `laboró en la empresa desde el ${formatDate(employeeData.fecha_ingreso)} hasta el ${formatDate(employeeData.fecha_retiro)}`;
-        
+        const statusText = employeeData.estado === 'ACTIVO' ? `se encuentra vinculado(a) laboralmente desde el ${formatDate(employeeData.fecha_ingreso)} y a la fecha continúa prestando sus servicios` : `laboró en la empresa desde el ${formatDate(employeeData.fecha_ingreso)} hasta el ${formatDate(employeeData.fecha_retiro)}`;
         return `La empresa ${employeeData.empresa} certifica que ${employeeData.nombre}, identificado(a) con ${employeeData.tipo_documento} No. ${employeeData.numero_documento}, ${statusText} desempeñando el cargo de ${employeeData.cargo} con un salario de ${formatCurrency(employeeData.sueldo)} bajo contrato ${employeeData.tipo_contrato}. Estado actual: ${employeeData.estado}.`;
-      
       default:
         return '';
     }
   };
-
-  return (
-    <div className="w-full max-w-4xl mx-auto animate-fade-in space-y-6">
+  return <div className="w-full max-w-4xl mx-auto animate-fade-in space-y-6">
       {/* Header del certificado */}
       <Card className="border-0 shadow-xl bg-white/95 backdrop-blur-sm">
         <CardHeader className="text-center pb-4">
@@ -353,31 +323,14 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
       {/* Vista previa del certificado */}
       <Card className="border-0 shadow-xl bg-white backdrop-blur-sm">
         <CardContent className="p-8">
-          {isGenerating ? (
-            <div className="text-center py-12">
+          {isGenerating ? <div className="text-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-vity-green mx-auto mb-4"></div>
               <p className="text-gray-600">Generando tu certificado...</p>
-            </div>
-          ) : (
-            <div className="space-y-6">
+            </div> : <div className="space-y-6">
               {/* Encabezado de la empresa */}
               <div className="text-center border-b pb-6">
-                {companyConfig?.logoUrl ? (
-                  <img 
-                    src={companyConfig.logoUrl} 
-                    alt="Logo" 
-                    className="h-16 w-auto mx-auto mb-4"
-                  />
-                ) : (
-                  <img 
-                    src="/lovable-uploads/09667bc0-9af8-468b-9c4c-d4844d158bc0.png" 
-                    alt="Vity Logo" 
-                    className="h-16 w-auto mx-auto mb-4"
-                  />
-                )}
-                <h1 className="text-3xl font-bold mb-2" style={{ color: companyConfig?.headerColor || '#22c55e' }}>
-                  {companyConfig?.companyName || employeeData.empresa.toUpperCase()}
-                </h1>
+                {companyConfig?.logoUrl ? <img src={companyConfig.logoUrl} alt="Logo" className="h-16 w-auto mx-auto mb-4" /> : <img src="/lovable-uploads/09667bc0-9af8-468b-9c4c-d4844d158bc0.png" alt="Vity Logo" className="h-16 w-auto mx-auto mb-4" />}
+                
                 <p className="text-gray-600">{companyConfig?.nit || 'NIT: 900.123.456-7'}</p>
                 <p className="text-gray-600">{companyConfig?.city || 'Bogotá, Colombia'}</p>
               </div>
@@ -400,69 +353,47 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
               </div>
 
               {/* Firmantes */}
-              {companyConfig?.signatories && companyConfig.signatories.length > 0 && (
-                <div className="flex justify-center mt-16">
+              {companyConfig?.signatories && companyConfig.signatories.length > 0 && <div className="flex justify-center mt-16">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                    {companyConfig.signatories.map((signatory, index) => (
-                      <div key={index} className="text-center">
+                    {companyConfig.signatories.map((signatory, index) => <div key={index} className="text-center">
                         <div className="border-t-2 border-gray-800 w-48 mb-2"></div>
                         <p className="font-bold text-sm">{signatory.name}</p>
                         <p className="text-xs text-gray-600">{signatory.position}</p>
-                      </div>
-                    ))}
+                      </div>)}
                   </div>
-                </div>
-              )}
+                </div>}
 
               {/* Pie del certificado */}
               <div className="text-center text-sm text-gray-600 border-t pt-6">
                 <p>Este certificado es válido con firma digital y código de verificación</p>
                 <p className="font-mono text-xs mt-2">Código: {verificationCode}</p>
-                {companyConfig?.footerText && (
-                  <div className="mt-4 text-xs whitespace-pre-line">
+                {companyConfig?.footerText && <div className="mt-4 text-xs whitespace-pre-line">
                     {companyConfig.footerText}
-                  </div>
-                )}
+                  </div>}
               </div>
-            </div>
-          )}
+            </div>}
         </CardContent>
       </Card>
 
       {/* Botones de acción */}
-      {isGenerated && (
-        <Card className="border-0 shadow-xl bg-white/95 backdrop-blur-sm">
+      {isGenerated && <Card className="border-0 shadow-xl bg-white/95 backdrop-blur-sm">
           <CardContent className="p-6">
             <div className="flex flex-col md:flex-row gap-4">
-              <Button 
-                onClick={downloadCertificate}
-                className="flex-1 h-12 bg-vity-green hover:bg-vity-green-dark text-white font-semibold transition-all duration-200 transform hover:scale-105"
-              >
+              <Button onClick={downloadCertificate} className="flex-1 h-12 bg-vity-green hover:bg-vity-green-dark text-white font-semibold transition-all duration-200 transform hover:scale-105">
                 <Download className="h-5 w-5 mr-2" />
                 Descargar Certificado PDF
               </Button>
               
-              <Button 
-                onClick={onBack}
-                variant="outline"
-                className="h-12 border-vity-green text-vity-green hover:bg-vity-green/10"
-              >
+              <Button onClick={onBack} variant="outline" className="h-12 border-vity-green text-vity-green hover:bg-vity-green/10">
                 Generar Otro
               </Button>
               
-              <Button 
-                onClick={onStartOver}
-                variant="outline"
-                className="h-12"
-              >
+              <Button onClick={onStartOver} variant="outline" className="h-12">
                 Nuevo Usuario
               </Button>
             </div>
           </CardContent>
-        </Card>
-      )}
-    </div>
-  );
+        </Card>}
+    </div>;
 };
-
 export default CertificateGenerator;
