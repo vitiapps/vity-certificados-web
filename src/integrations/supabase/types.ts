@@ -83,6 +83,45 @@ export type Database = {
           },
         ]
       }
+      company_certificate_configs: {
+        Row: {
+          city: string
+          company_name: string
+          created_at: string
+          footer_text: string | null
+          header_color: string
+          id: string
+          logo_base64: string | null
+          nit: string
+          signatories: Json | null
+          updated_at: string
+        }
+        Insert: {
+          city?: string
+          company_name: string
+          created_at?: string
+          footer_text?: string | null
+          header_color?: string
+          id?: string
+          logo_base64?: string | null
+          nit: string
+          signatories?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          city?: string
+          company_name?: string
+          created_at?: string
+          footer_text?: string | null
+          header_color?: string
+          id?: string
+          logo_base64?: string | null
+          nit?: string
+          signatories?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       empleados: {
         Row: {
           cargo: string

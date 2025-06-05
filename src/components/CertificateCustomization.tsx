@@ -6,23 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Save, Plus, Trash2, X } from 'lucide-react';
-
-interface CompanyCertificateConfig {
-  id: string;
-  companyName: string;
-  logoUrl?: string;
-  nit: string;
-  city: string;
-  signatories: {
-    name: string;
-    position: string;
-    signature?: string;
-  }[];
-  customText?: string;
-  headerColor: string;
-  footerText?: string;
-}
+import { Upload, Save, Plus, Trash2, X, RefreshCw } from 'lucide-react';
+import { companyConfigService, CompanyCertificateConfig } from '@/services/companyConfigService';
 
 const CertificateCustomization: React.FC = () => {
   const [companies, setCompanies] = useState<CompanyCertificateConfig[]>([]);
@@ -37,6 +22,7 @@ const CertificateCustomization: React.FC = () => {
   });
   const [logoPreview, setLogoPreview] = useState<string>('');
   const [isNewCompany, setIsNewCompany] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const signatureInputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const { toast } = useToast();
@@ -49,42 +35,35 @@ const CertificateCustomization: React.FC = () => {
     setLogoPreview(currentConfig.logoUrl || '');
   }, [currentConfig.logoUrl]);
 
-  const loadCompanyConfigs = () => {
-    const saved = localStorage.getItem('certificate_company_configs');
-    if (saved) {
-      const configs = JSON.parse(saved);
+  const loadCompanyConfigs = async () => {
+    setIsLoading(true);
+    try {
+      // Primero intentar migrar datos de localStorage si existen
+      await companyConfigService.migrateFromLocalStorage();
+      
+      // Cargar configuraciones desde la base de datos
+      const configs = await companyConfigService.getAllConfigs();
       setCompanies(configs);
       
-      // Agregar configuración por defecto para Best People si no existe
-      const bestPeopleExists = configs.some((c: CompanyCertificateConfig) => 
-        c.companyName.toLowerCase().includes('best people')
-      );
-      
-      if (!bestPeopleExists) {
-        const bestPeopleConfig: CompanyCertificateConfig = {
-          id: 'best-people',
-          companyName: 'BEST PEOPLE',
-          logoUrl: '/lovable-uploads/978900f6-22c7-42ed-bf44-a140b1685e00.png',
-          nit: 'NIT 900493317-2',
-          city: 'Bogotá, Colombia',
-          signatories: [
-            {
-              name: 'CECILIA SALCEDO D.',
-              position: 'Directora de Gestión Humana'
-            }
-          ],
-          headerColor: '#22c55e',
-          footerText: 'Cra 14 # 93-44/46 Torre B. Of. 501\nTel. 315556673\nBogotá - Colombia'
-        };
-        
-        const updatedConfigs = [...configs, bestPeopleConfig];
-        setCompanies(updatedConfigs);
-        localStorage.setItem('certificate_company_configs', JSON.stringify(updatedConfigs));
+      // Si no hay configuraciones, crear la de Best People por defecto
+      if (configs.length === 0) {
+        await createDefaultBestPeopleConfig();
       }
-    } else {
-      // Crear configuración inicial para Best People
-      const initialConfig: CompanyCertificateConfig = {
-        id: 'best-people',
+    } catch (error) {
+      console.error('Error loading company configs:', error);
+      toast({
+        title: "Error",
+        description: "Error al cargar las configuraciones de empresas",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const createDefaultBestPeopleConfig = async () => {
+    try {
+      const bestPeopleConfig: Omit<CompanyCertificateConfig, 'id'> = {
         companyName: 'BEST PEOPLE',
         logoUrl: '/lovable-uploads/978900f6-22c7-42ed-bf44-a140b1685e00.png',
         nit: 'NIT 900493317-2',
@@ -99,8 +78,15 @@ const CertificateCustomization: React.FC = () => {
         footerText: 'Cra 14 # 93-44/46 Torre B. Of. 501\nTel. 315556673\nBogotá - Colombia'
       };
       
-      setCompanies([initialConfig]);
-      localStorage.setItem('certificate_company_configs', JSON.stringify([initialConfig]));
+      const created = await companyConfigService.createConfig(bestPeopleConfig);
+      setCompanies([created]);
+      
+      toast({
+        title: "Configuración creada",
+        description: "Se ha creado la configuración por defecto de Best People"
+      });
+    } catch (error) {
+      console.error('Error creating default config:', error);
     }
   };
 
@@ -237,7 +223,6 @@ const CertificateCustomization: React.FC = () => {
       ...prev,
       signatories: prev.signatories.filter((_, i) => i !== index)
     }));
-    // Limpiar la referencia del input
     signatureInputRefs.current = signatureInputRefs.current.filter((_, i) => i !== index);
   };
 
@@ -250,7 +235,7 @@ const CertificateCustomization: React.FC = () => {
     }));
   };
 
-  const saveConfiguration = () => {
+  const saveConfiguration = async () => {
     if (!currentConfig.companyName || !currentConfig.nit) {
       toast({
         title: "Error",
@@ -260,31 +245,40 @@ const CertificateCustomization: React.FC = () => {
       return;
     }
 
-    // Generar ID si es nueva empresa
-    const configToSave = {
-      ...currentConfig,
-      id: currentConfig.id || `company-${Date.now()}`
-    };
+    setIsLoading(true);
+    try {
+      let savedConfig: CompanyCertificateConfig;
+      
+      if (isNewCompany || !selectedCompany) {
+        // Nueva empresa
+        const { id, ...configData } = currentConfig;
+        savedConfig = await companyConfigService.createConfig(configData);
+        setSelectedCompany(savedConfig.id);
+        setIsNewCompany(false);
+      } else {
+        // Actualizar empresa existente
+        const { id, ...configData } = currentConfig;
+        savedConfig = await companyConfigService.updateConfig(selectedCompany, configData);
+      }
 
-    let updatedCompanies;
-    if (isNewCompany || !selectedCompany) {
-      // Nueva empresa
-      updatedCompanies = [...companies, configToSave];
-      setSelectedCompany(configToSave.id);
-      setIsNewCompany(false);
-    } else {
-      // Actualizar empresa existente
-      updatedCompanies = companies.map(c => c.id === selectedCompany ? configToSave : c);
+      // Actualizar la lista local
+      await loadCompanyConfigs();
+      setCurrentConfig(savedConfig);
+      
+      toast({
+        title: "Configuración guardada",
+        description: "La personalización del certificado se ha guardado correctamente"
+      });
+    } catch (error) {
+      console.error('Error saving configuration:', error);
+      toast({
+        title: "Error",
+        description: "Error al guardar la configuración",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
     }
-
-    setCompanies(updatedCompanies);
-    setCurrentConfig(configToSave);
-    localStorage.setItem('certificate_company_configs', JSON.stringify(updatedCompanies));
-    
-    toast({
-      title: "Configuración guardada",
-      description: "La personalización del certificado se ha guardado correctamente"
-    });
   };
 
   const createNewCompany = () => {
@@ -309,7 +303,7 @@ const CertificateCustomization: React.FC = () => {
     signatureInputRefs.current = [];
   };
 
-  const deleteCompany = () => {
+  const deleteCompany = async () => {
     if (!selectedCompany) {
       toast({
         title: "Error",
@@ -319,17 +313,30 @@ const CertificateCustomization: React.FC = () => {
       return;
     }
 
-    const updatedCompanies = companies.filter(c => c.id !== selectedCompany);
-    setCompanies(updatedCompanies);
-    localStorage.setItem('certificate_company_configs', JSON.stringify(updatedCompanies));
-    
-    // Resetear formulario
-    createNewCompany();
-    
-    toast({
-      title: "Empresa eliminada",
-      description: "La configuración de la empresa se ha eliminado correctamente"
-    });
+    if (!confirm('¿Estás seguro de que quieres eliminar esta empresa?')) {
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await companyConfigService.deleteConfig(selectedCompany);
+      await loadCompanyConfigs();
+      createNewCompany();
+      
+      toast({
+        title: "Empresa eliminada",
+        description: "La configuración de la empresa se ha eliminado correctamente"
+      });
+    } catch (error) {
+      console.error('Error deleting company:', error);
+      toast({
+        title: "Error",
+        description: "Error al eliminar la empresa",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -346,6 +353,7 @@ const CertificateCustomization: React.FC = () => {
                 value={selectedCompany}
                 onChange={(e) => handleCompanySelect(e.target.value)}
                 className="w-full p-2 border rounded-md"
+                disabled={isLoading}
               >
                 <option value="">Nueva empresa...</option>
                 {companies.map(company => (
@@ -356,7 +364,17 @@ const CertificateCustomization: React.FC = () => {
               </select>
             </div>
             <div className="flex gap-2 items-end">
-              <Button onClick={createNewCompany} className="mt-6">
+              <Button 
+                onClick={loadCompanyConfigs} 
+                disabled={isLoading}
+                size="sm"
+                variant="outline"
+                className="mt-6"
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                Actualizar
+              </Button>
+              <Button onClick={createNewCompany} className="mt-6" disabled={isLoading}>
                 <Plus className="h-4 w-4 mr-2" />
                 Nueva Empresa
               </Button>
@@ -365,6 +383,7 @@ const CertificateCustomization: React.FC = () => {
                   onClick={deleteCompany} 
                   variant="destructive"
                   className="mt-6"
+                  disabled={isLoading}
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
                   Eliminar
@@ -372,6 +391,13 @@ const CertificateCustomization: React.FC = () => {
               )}
             </div>
           </div>
+
+          {isLoading && (
+            <div className="text-center py-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-vity-green mx-auto"></div>
+              <p className="text-gray-600 mt-2">Cargando...</p>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
@@ -382,6 +408,7 @@ const CertificateCustomization: React.FC = () => {
                   value={currentConfig.companyName}
                   onChange={(e) => setCurrentConfig(prev => ({ ...prev, companyName: e.target.value }))}
                   placeholder="BEST PEOPLE"
+                  disabled={isLoading}
                 />
               </div>
 
@@ -392,6 +419,7 @@ const CertificateCustomization: React.FC = () => {
                   value={currentConfig.nit}
                   onChange={(e) => setCurrentConfig(prev => ({ ...prev, nit: e.target.value }))}
                   placeholder="NIT 900493317-2"
+                  disabled={isLoading}
                 />
               </div>
 
@@ -402,6 +430,7 @@ const CertificateCustomization: React.FC = () => {
                   value={currentConfig.city}
                   onChange={(e) => setCurrentConfig(prev => ({ ...prev, city: e.target.value }))}
                   placeholder="Bogotá, Colombia"
+                  disabled={isLoading}
                 />
               </div>
 
@@ -416,11 +445,13 @@ const CertificateCustomization: React.FC = () => {
                       onChange={handleFileUpload}
                       className="hidden"
                       id="logo-upload"
+                      disabled={isLoading}
                     />
                     <Button
                       variant="outline"
                       onClick={() => fileInputRef.current?.click()}
                       className="flex items-center gap-2"
+                      disabled={isLoading}
                     >
                       <Upload size={16} />
                       Cargar Logo
@@ -431,6 +462,7 @@ const CertificateCustomization: React.FC = () => {
                         size="sm"
                         onClick={removeLogo}
                         className="text-red-600 hover:bg-red-50"
+                        disabled={isLoading}
                       >
                         <X size={16} />
                       </Button>
@@ -461,6 +493,7 @@ const CertificateCustomization: React.FC = () => {
                   type="color"
                   value={currentConfig.headerColor}
                   onChange={(e) => setCurrentConfig(prev => ({ ...prev, headerColor: e.target.value }))}
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -475,11 +508,13 @@ const CertificateCustomization: React.FC = () => {
                         placeholder="Nombre del firmante"
                         value={signatory.name}
                         onChange={(e) => updateSignatory(index, 'name', e.target.value)}
+                        disabled={isLoading}
                       />
                       <Input
                         placeholder="Cargo"
                         value={signatory.position}
                         onChange={(e) => updateSignatory(index, 'position', e.target.value)}
+                        disabled={isLoading}
                       />
                       
                       {/* Sección de firma */}
@@ -493,12 +528,14 @@ const CertificateCustomization: React.FC = () => {
                             onChange={(e) => handleSignatureUpload(e, index)}
                             className="hidden"
                             id={`signature-upload-${index}`}
+                            disabled={isLoading}
                           />
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => signatureInputRefs.current[index]?.click()}
                             className="flex items-center gap-1"
+                            disabled={isLoading}
                           >
                             <Upload size={14} />
                             Cargar Firma
@@ -509,6 +546,7 @@ const CertificateCustomization: React.FC = () => {
                               size="sm"
                               onClick={() => removeSignature(index)}
                               className="text-red-600 hover:bg-red-50"
+                              disabled={isLoading}
                             >
                               <X size={14} />
                             </Button>
@@ -533,6 +571,7 @@ const CertificateCustomization: React.FC = () => {
                           size="sm"
                           onClick={() => removeSignatory(index)}
                           className="text-red-600"
+                          disabled={isLoading}
                         >
                           <Trash2 className="h-4 w-4 mr-1" />
                           Eliminar
@@ -541,7 +580,11 @@ const CertificateCustomization: React.FC = () => {
                     </div>
                   </div>
                 ))}
-                <Button variant="outline" onClick={addSignatory}>
+                <Button 
+                  variant="outline" 
+                  onClick={addSignatory}
+                  disabled={isLoading}
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Agregar Firmante
                 </Button>
@@ -555,15 +598,20 @@ const CertificateCustomization: React.FC = () => {
                   onChange={(e) => setCurrentConfig(prev => ({ ...prev, footerText: e.target.value }))}
                   placeholder="Dirección, teléfono, ciudad..."
                   rows={3}
+                  disabled={isLoading}
                 />
               </div>
             </div>
           </div>
 
           <div className="mt-6">
-            <Button onClick={saveConfiguration} className="bg-vity-green hover:bg-vity-green-dark">
+            <Button 
+              onClick={saveConfiguration} 
+              className="bg-vity-green hover:bg-vity-green-dark"
+              disabled={isLoading}
+            >
               <Save className="h-4 w-4 mr-2" />
-              {isNewCompany || !selectedCompany ? 'Crear Empresa' : 'Actualizar Configuración'}
+              {isLoading ? 'Guardando...' : (isNewCompany || !selectedCompany ? 'Crear Empresa' : 'Actualizar Configuración')}
             </Button>
           </div>
         </CardContent>

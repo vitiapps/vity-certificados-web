@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,28 +5,13 @@ import { Badge } from '@/components/ui/badge';
 import { Download, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabaseEmployeeService } from '@/services/supabaseEmployeeService';
+import { companyConfigService, CompanyCertificateConfig } from '@/services/companyConfigService';
 
 interface CertificateGeneratorProps {
   employeeData: any;
   certificateType: string;
   onBack: () => void;
   onStartOver: () => void;
-}
-
-interface CompanyCertificateConfig {
-  id: string;
-  companyName: string;
-  logoUrl?: string;
-  nit: string;
-  city: string;
-  signatories: {
-    name: string;
-    position: string;
-    signature?: string;
-  }[];
-  customText?: string;
-  headerColor: string;
-  footerText?: string;
 }
 
 const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
@@ -53,16 +37,17 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
     generateCertificate();
   }, []);
 
-  const loadCompanyConfig = () => {
-    const saved = localStorage.getItem('certificate_company_configs');
-    if (saved) {
-      const configs: CompanyCertificateConfig[] = JSON.parse(saved);
+  const loadCompanyConfig = async () => {
+    try {
+      const configs = await companyConfigService.getAllConfigs();
       // Buscar configuración que coincida con la empresa del empleado
       const config = configs.find(c => 
         c.companyName.toLowerCase().includes(employeeData.empresa.toLowerCase()) || 
         employeeData.empresa.toLowerCase().includes(c.companyName.toLowerCase())
       );
       setCompanyConfig(config || null);
+    } catch (error) {
+      console.error('Error loading company config:', error);
     }
   };
 
