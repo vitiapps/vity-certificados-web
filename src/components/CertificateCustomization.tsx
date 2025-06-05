@@ -44,18 +44,64 @@ const CertificateCustomization: React.FC = () => {
   }, []);
 
   const loadCompanyConfigs = () => {
-    const saved = localStorage.getItem('certificate_company_configs');
-    if (saved) {
-      const configs = JSON.parse(saved);
-      setCompanies(configs);
+    console.log('Cargando configuraciones de empresas...');
+    
+    try {
+      const saved = localStorage.getItem('certificate_company_configs');
+      console.log('Datos guardados en localStorage:', saved);
       
-      // Agregar configuración por defecto para Best People si no existe
-      const bestPeopleExists = configs.some((c: CompanyCertificateConfig) => 
-        c.companyName.toLowerCase().includes('best people')
-      );
-      
-      if (!bestPeopleExists) {
-        const bestPeopleConfig: CompanyCertificateConfig = {
+      if (saved) {
+        const configs = JSON.parse(saved);
+        console.log('Configuraciones parseadas:', configs);
+        console.log('Número de empresas encontradas:', configs.length);
+        
+        // Log detallado de cada empresa
+        configs.forEach((config: CompanyCertificateConfig, index: number) => {
+          console.log(`Empresa ${index + 1}:`, {
+            id: config.id,
+            nombre: config.companyName,
+            tieneLogoUrl: !!config.logoUrl,
+            logoType: config.logoUrl?.startsWith('data:') ? 'base64' : 'url',
+            logoSize: config.logoUrl ? config.logoUrl.length : 0,
+            firmantes: config.signatories.length,
+            firmantesWith: config.signatories.filter(s => s.signature).length
+          });
+        });
+        
+        setCompanies(configs);
+        
+        // Agregar configuración por defecto para Best People si no existe
+        const bestPeopleExists = configs.some((c: CompanyCertificateConfig) => 
+          c.companyName.toLowerCase().includes('best people')
+        );
+        
+        if (!bestPeopleExists) {
+          console.log('Agregando configuración por defecto de Best People...');
+          const bestPeopleConfig: CompanyCertificateConfig = {
+            id: 'best-people',
+            companyName: 'BEST PEOPLE',
+            logoUrl: '/lovable-uploads/978900f6-22c7-42ed-bf44-a140b1685e00.png',
+            nit: 'NIT 900493317-2',
+            city: 'Bogotá, Colombia',
+            signatories: [
+              {
+                name: 'CECILIA SALCEDO D.',
+                position: 'Directora de Gestión Humana'
+              }
+            ],
+            headerColor: '#22c55e',
+            footerText: 'Cra 14 # 93-44/46 Torre B. Of. 501\nTel. 315556673\nBogotá - Colombia'
+          };
+          
+          const updatedConfigs = [...configs, bestPeopleConfig];
+          setCompanies(updatedConfigs);
+          localStorage.setItem('certificate_company_configs', JSON.stringify(updatedConfigs));
+          console.log('Configuración de Best People agregada');
+        }
+      } else {
+        console.log('No hay datos guardados, creando configuración inicial...');
+        // Crear configuración inicial para Best People
+        const initialConfig: CompanyCertificateConfig = {
           id: 'best-people',
           companyName: 'BEST PEOPLE',
           logoUrl: '/lovable-uploads/978900f6-22c7-42ed-bf44-a140b1685e00.png',
@@ -71,34 +117,23 @@ const CertificateCustomization: React.FC = () => {
           footerText: 'Cra 14 # 93-44/46 Torre B. Of. 501\nTel. 315556673\nBogotá - Colombia'
         };
         
-        const updatedConfigs = [...configs, bestPeopleConfig];
-        setCompanies(updatedConfigs);
-        localStorage.setItem('certificate_company_configs', JSON.stringify(updatedConfigs));
+        setCompanies([initialConfig]);
+        localStorage.setItem('certificate_company_configs', JSON.stringify([initialConfig]));
+        console.log('Configuración inicial creada');
       }
-    } else {
-      // Crear configuración inicial para Best People
-      const initialConfig: CompanyCertificateConfig = {
-        id: 'best-people',
-        companyName: 'BEST PEOPLE',
-        logoUrl: '/lovable-uploads/978900f6-22c7-42ed-bf44-a140b1685e00.png',
-        nit: 'NIT 900493317-2',
-        city: 'Bogotá, Colombia',
-        signatories: [
-          {
-            name: 'CECILIA SALCEDO D.',
-            position: 'Directora de Gestión Humana'
-          }
-        ],
-        headerColor: '#22c55e',
-        footerText: 'Cra 14 # 93-44/46 Torre B. Of. 501\nTel. 315556673\nBogotá - Colombia'
-      };
-      
-      setCompanies([initialConfig]);
-      localStorage.setItem('certificate_company_configs', JSON.stringify([initialConfig]));
+    } catch (error) {
+      console.error('Error al cargar configuraciones:', error);
+      toast({
+        title: "Error",
+        description: "Error al cargar las configuraciones de empresas",
+        variant: "destructive"
+      });
     }
   };
 
   const handleCompanySelect = (companyId: string) => {
+    console.log('Seleccionando empresa:', companyId);
+    
     if (companyId === '') {
       createNewCompany();
       return;
@@ -106,9 +141,18 @@ const CertificateCustomization: React.FC = () => {
     
     const company = companies.find(c => c.id === companyId);
     if (company) {
+      console.log('Empresa encontrada:', {
+        nombre: company.companyName,
+        tieneLogoUrl: !!company.logoUrl,
+        logoType: company.logoUrl?.startsWith('data:') ? 'base64' : 'url',
+        firmantes: company.signatories.length
+      });
+      
       setCurrentConfig(company);
       setSelectedCompany(companyId);
       setIsNewCompany(false);
+    } else {
+      console.error('Empresa no encontrada con ID:', companyId);
     }
   };
 
@@ -117,9 +161,13 @@ const CertificateCustomization: React.FC = () => {
       const reader = new FileReader();
       reader.onload = () => {
         const result = reader.result as string;
+        console.log('Imagen convertida a base64, tamaño:', result.length);
         resolve(result);
       };
-      reader.onerror = () => reject(reader.error);
+      reader.onerror = () => {
+        console.error('Error al convertir imagen a base64');
+        reject(reader.error);
+      };
       reader.readAsDataURL(file);
     });
   };
@@ -127,6 +175,12 @@ const CertificateCustomization: React.FC = () => {
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      console.log('Subiendo archivo de logo:', {
+        nombre: file.name,
+        tipo: file.type,
+        tamaño: file.size
+      });
+      
       // Validar tipo de archivo
       if (!file.type.startsWith('image/')) {
         toast({
@@ -150,7 +204,7 @@ const CertificateCustomization: React.FC = () => {
       try {
         const base64Result = await convertImageToBase64(file);
         setCurrentConfig(prev => ({ ...prev, logoUrl: base64Result }));
-        console.log('Logo cargado:', base64Result.substring(0, 50) + '...');
+        console.log('Logo cargado exitosamente, tamaño base64:', base64Result.length);
         toast({
           title: "Logo cargado",
           description: "El logo se ha cargado correctamente"
@@ -169,6 +223,12 @@ const CertificateCustomization: React.FC = () => {
   const handleSignatureUpload = async (event: React.ChangeEvent<HTMLInputElement>, signatoryIndex: number) => {
     const file = event.target.files?.[0];
     if (file) {
+      console.log('Subiendo firma para firmante', signatoryIndex, ':', {
+        nombre: file.name,
+        tipo: file.type,
+        tamaño: file.size
+      });
+      
       // Validar tipo de archivo
       if (!file.type.startsWith('image/')) {
         toast({
@@ -197,7 +257,7 @@ const CertificateCustomization: React.FC = () => {
             i === signatoryIndex ? { ...sig, signature: base64Result } : sig
           )
         }));
-        console.log('Firma cargada para el firmante', signatoryIndex, ':', base64Result.substring(0, 50) + '...');
+        console.log('Firma cargada exitosamente para firmante', signatoryIndex, ', tamaño base64:', base64Result.length);
         toast({
           title: "Firma cargada",
           description: "La firma se ha cargado correctamente"
@@ -274,6 +334,15 @@ const CertificateCustomization: React.FC = () => {
   };
 
   const saveConfiguration = () => {
+    console.log('Guardando configuración:', {
+      id: currentConfig.id,
+      nombre: currentConfig.companyName,
+      tieneLogoUrl: !!currentConfig.logoUrl,
+      logoSize: currentConfig.logoUrl ? currentConfig.logoUrl.length : 0,
+      firmantes: currentConfig.signatories.length,
+      firmantesWith: currentConfig.signatories.filter(s => s.signature).length
+    });
+    
     if (!currentConfig.companyName || !currentConfig.nit) {
       toast({
         title: "Error",
@@ -293,15 +362,34 @@ const CertificateCustomization: React.FC = () => {
       updatedCompanies = [...companies, configToSave];
       setSelectedCompany(configToSave.id);
       setIsNewCompany(false);
+      console.log('Nueva empresa agregada');
     } else {
       updatedCompanies = companies.map(c => c.id === selectedCompany ? configToSave : c);
+      console.log('Empresa actualizada');
     }
 
     setCompanies(updatedCompanies);
     setCurrentConfig(configToSave);
-    localStorage.setItem('certificate_company_configs', JSON.stringify(updatedCompanies));
     
-    console.log('Configuración guardada:', configToSave);
+    try {
+      localStorage.setItem('certificate_company_configs', JSON.stringify(updatedCompanies));
+      console.log('Configuración guardada en localStorage exitosamente');
+      
+      // Verificar que se guardó correctamente
+      const verificacion = localStorage.getItem('certificate_company_configs');
+      if (verificacion) {
+        const parsed = JSON.parse(verificacion);
+        console.log('Verificación: empresas guardadas:', parsed.length);
+      }
+    } catch (error) {
+      console.error('Error al guardar en localStorage:', error);
+      toast({
+        title: "Error",
+        description: "Error al guardar la configuración",
+        variant: "destructive"
+      });
+      return;
+    }
     
     toast({
       title: "Configuración guardada",
@@ -351,11 +439,42 @@ const CertificateCustomization: React.FC = () => {
     });
   };
 
+  // Debug button para verificar el estado
+  const debugLocalStorage = () => {
+    const saved = localStorage.getItem('certificate_company_configs');
+    console.log('=== DEBUG LOCALSTORAGE ===');
+    console.log('Raw data:', saved);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        console.log('Parsed data:', parsed);
+        console.log('Companies count:', parsed.length);
+        parsed.forEach((company: any, index: number) => {
+          console.log(`Company ${index}:`, {
+            id: company.id,
+            name: company.companyName,
+            hasLogo: !!company.logoUrl,
+            logoType: company.logoUrl?.startsWith('data:') ? 'base64' : 'url',
+            signatories: company.signatories?.length || 0
+          });
+        });
+      } catch (error) {
+        console.error('Error parsing:', error);
+      }
+    }
+    console.log('=== END DEBUG ===');
+  };
+
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="text-xl">Personalización de Certificados por Empresa</CardTitle>
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-xl">Personalización de Certificados por Empresa</CardTitle>
+            <Button onClick={debugLocalStorage} variant="outline" size="sm">
+              Debug
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="flex gap-4 mb-6">
@@ -369,7 +488,7 @@ const CertificateCustomization: React.FC = () => {
                 <option value="">Nueva empresa...</option>
                 {companies.map(company => (
                   <option key={company.id} value={company.id}>
-                    {company.companyName}
+                    {company.companyName} {company.logoUrl ? '(con logo)' : '(sin logo)'}
                   </option>
                 ))}
               </select>
