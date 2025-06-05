@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,7 +34,6 @@ const CertificateCustomization: React.FC = () => {
     signatories: [{ name: '', position: '' }],
     headerColor: '#22c55e'
   });
-  const [logoPreview, setLogoPreview] = useState<string>('');
   const [isNewCompany, setIsNewCompany] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const signatureInputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -44,10 +42,6 @@ const CertificateCustomization: React.FC = () => {
   useEffect(() => {
     loadCompanyConfigs();
   }, []);
-
-  useEffect(() => {
-    setLogoPreview(currentConfig.logoUrl || '');
-  }, [currentConfig.logoUrl]);
 
   const loadCompanyConfigs = () => {
     const saved = localStorage.getItem('certificate_company_configs');
@@ -118,7 +112,19 @@ const CertificateCustomization: React.FC = () => {
     }
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const convertImageToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        resolve(result);
+      };
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       // Validar tipo de archivo
@@ -141,21 +147,26 @@ const CertificateCustomization: React.FC = () => {
         return;
       }
 
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        setLogoPreview(result);
-        setCurrentConfig(prev => ({ ...prev, logoUrl: result }));
+      try {
+        const base64Result = await convertImageToBase64(file);
+        setCurrentConfig(prev => ({ ...prev, logoUrl: base64Result }));
+        console.log('Logo cargado:', base64Result.substring(0, 50) + '...');
         toast({
           title: "Logo cargado",
           description: "El logo se ha cargado correctamente"
         });
-      };
-      reader.readAsDataURL(file);
+      } catch (error) {
+        console.error('Error al cargar el logo:', error);
+        toast({
+          title: "Error",
+          description: "Error al cargar el logo. Intenta nuevamente.",
+          variant: "destructive"
+        });
+      }
     }
   };
 
-  const handleSignatureUpload = (event: React.ChangeEvent<HTMLInputElement>, signatoryIndex: number) => {
+  const handleSignatureUpload = async (event: React.ChangeEvent<HTMLInputElement>, signatoryIndex: number) => {
     const file = event.target.files?.[0];
     if (file) {
       // Validar tipo de archivo
@@ -178,30 +189,39 @@ const CertificateCustomization: React.FC = () => {
         return;
       }
 
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
+      try {
+        const base64Result = await convertImageToBase64(file);
         setCurrentConfig(prev => ({
           ...prev,
           signatories: prev.signatories.map((sig, i) => 
-            i === signatoryIndex ? { ...sig, signature: result } : sig
+            i === signatoryIndex ? { ...sig, signature: base64Result } : sig
           )
         }));
+        console.log('Firma cargada para el firmante', signatoryIndex, ':', base64Result.substring(0, 50) + '...');
         toast({
           title: "Firma cargada",
           description: "La firma se ha cargado correctamente"
         });
-      };
-      reader.readAsDataURL(file);
+      } catch (error) {
+        console.error('Error al cargar la firma:', error);
+        toast({
+          title: "Error",
+          description: "Error al cargar la firma. Intenta nuevamente.",
+          variant: "destructive"
+        });
+      }
     }
   };
 
   const removeLogo = () => {
-    setLogoPreview('');
     setCurrentConfig(prev => ({ ...prev, logoUrl: '' }));
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+    toast({
+      title: "Logo eliminado",
+      description: "El logo se ha eliminado correctamente"
+    });
   };
 
   const removeSignature = (signatoryIndex: number) => {
@@ -214,6 +234,10 @@ const CertificateCustomization: React.FC = () => {
     if (signatureInputRefs.current[signatoryIndex]) {
       signatureInputRefs.current[signatoryIndex]!.value = '';
     }
+    toast({
+      title: "Firma eliminada",
+      description: "La firma se ha eliminado correctamente"
+    });
   };
 
   const addSignatory = () => {
@@ -237,7 +261,6 @@ const CertificateCustomization: React.FC = () => {
       ...prev,
       signatories: prev.signatories.filter((_, i) => i !== index)
     }));
-    // Limpiar la referencia del input
     signatureInputRefs.current = signatureInputRefs.current.filter((_, i) => i !== index);
   };
 
@@ -260,7 +283,6 @@ const CertificateCustomization: React.FC = () => {
       return;
     }
 
-    // Generar ID si es nueva empresa
     const configToSave = {
       ...currentConfig,
       id: currentConfig.id || `company-${Date.now()}`
@@ -268,18 +290,18 @@ const CertificateCustomization: React.FC = () => {
 
     let updatedCompanies;
     if (isNewCompany || !selectedCompany) {
-      // Nueva empresa
       updatedCompanies = [...companies, configToSave];
       setSelectedCompany(configToSave.id);
       setIsNewCompany(false);
     } else {
-      // Actualizar empresa existente
       updatedCompanies = companies.map(c => c.id === selectedCompany ? configToSave : c);
     }
 
     setCompanies(updatedCompanies);
     setCurrentConfig(configToSave);
     localStorage.setItem('certificate_company_configs', JSON.stringify(updatedCompanies));
+    
+    console.log('Configuración guardada:', configToSave);
     
     toast({
       title: "Configuración guardada",
@@ -299,10 +321,8 @@ const CertificateCustomization: React.FC = () => {
     
     setCurrentConfig(newConfig);
     setSelectedCompany('');
-    setLogoPreview('');
     setIsNewCompany(true);
     
-    // Limpiar referencias de archivos
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -323,7 +343,6 @@ const CertificateCustomization: React.FC = () => {
     setCompanies(updatedCompanies);
     localStorage.setItem('certificate_company_configs', JSON.stringify(updatedCompanies));
     
-    // Resetear formulario
     createNewCompany();
     
     toast({
@@ -425,7 +444,7 @@ const CertificateCustomization: React.FC = () => {
                       <Upload size={16} />
                       Cargar Logo
                     </Button>
-                    {logoPreview && (
+                    {currentConfig.logoUrl && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -437,13 +456,19 @@ const CertificateCustomization: React.FC = () => {
                     )}
                   </div>
                   
-                  {logoPreview && (
+                  {currentConfig.logoUrl && (
                     <div className="border rounded-lg p-3 bg-gray-50">
                       <p className="text-sm text-gray-600 mb-2">Vista previa:</p>
                       <img
-                        src={logoPreview}
+                        src={currentConfig.logoUrl}
                         alt="Logo preview"
                         className="max-h-20 w-auto border rounded"
+                        onError={(e) => {
+                          console.error('Error al cargar imagen de logo:', e);
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                        }}
+                        onLoad={() => console.log('Logo cargado correctamente en la vista previa')}
                       />
                     </div>
                   )}
@@ -482,7 +507,6 @@ const CertificateCustomization: React.FC = () => {
                         onChange={(e) => updateSignatory(index, 'position', e.target.value)}
                       />
                       
-                      {/* Sección de firma */}
                       <div className="space-y-2">
                         <Label className="text-sm">Firma</Label>
                         <div className="flex items-center gap-2">
@@ -522,6 +546,12 @@ const CertificateCustomization: React.FC = () => {
                               src={signatory.signature}
                               alt="Signature preview"
                               className="max-h-12 w-auto border rounded"
+                              onError={(e) => {
+                                console.error('Error al cargar imagen de firma:', e);
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                              }}
+                              onLoad={() => console.log('Firma cargada correctamente en la vista previa')}
                             />
                           </div>
                         )}

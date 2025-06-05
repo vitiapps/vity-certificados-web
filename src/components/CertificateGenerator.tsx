@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -57,12 +56,24 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
     const saved = localStorage.getItem('certificate_company_configs');
     if (saved) {
       const configs: CompanyCertificateConfig[] = JSON.parse(saved);
-      // Buscar configuración que coincida con la empresa del empleado
       const config = configs.find(c => 
         c.companyName.toLowerCase().includes(employeeData.empresa.toLowerCase()) || 
         employeeData.empresa.toLowerCase().includes(c.companyName.toLowerCase())
       );
-      setCompanyConfig(config || null);
+      
+      if (config) {
+        console.log('Configuración de empresa encontrada:', {
+          companyName: config.companyName,
+          hasLogo: !!config.logoUrl,
+          logoType: config.logoUrl?.startsWith('data:') ? 'base64' : 'url',
+          signatories: config.signatories.length,
+          signaturesWithImages: config.signatories.filter(s => s.signature).length
+        });
+        setCompanyConfig(config);
+      } else {
+        console.log('No se encontró configuración para la empresa:', employeeData.empresa);
+        setCompanyConfig(null);
+      }
     }
   };
 
@@ -162,7 +173,6 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
     const certificateContent = getCertificateContent();
     const currentDate = new Date().toLocaleDateString('es-ES');
 
-    // Usar configuración personalizada si existe, sino usar valores por defecto
     const companyName = companyConfig?.companyName || employeeData.empresa.toUpperCase();
     const nit = companyConfig?.nit || 'NIT: 900.123.456-7';
     const city = companyConfig?.city || 'Bogotá, Colombia';
@@ -170,6 +180,13 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
     const headerColor = companyConfig?.headerColor || '#22c55e';
     const signatories = companyConfig?.signatories || [];
     const footerText = companyConfig?.footerText;
+
+    console.log('Generando HTML del certificado con:', {
+      hasLogo: !!logoUrl,
+      logoType: logoUrl?.startsWith('data:') ? 'base64' : 'url',
+      signatories: signatories.length,
+      signaturesWithImages: signatories.filter(s => s.signature).length
+    });
 
     return `
 <!DOCTYPE html>
@@ -409,7 +426,13 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
                   <img 
                     src={companyConfig.logoUrl} 
                     alt="Watermark" 
-                    className="max-w-[800px] max-h-[800px] transform rotate-45" 
+                    className="max-w-[800px] max-h-[800px] transform rotate-45"
+                    onError={(e) => {
+                      console.error('Error al cargar marca de agua:', e);
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                    }}
+                    onLoad={() => console.log('Marca de agua cargada correctamente')}
                   />
                 </div>
               )}
@@ -421,7 +444,13 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
                     <img 
                       src={companyConfig.logoUrl} 
                       alt="Logo" 
-                      className="absolute top-0 right-0 h-16 w-auto" 
+                      className="absolute top-0 right-0 h-16 w-auto"
+                      onError={(e) => {
+                        console.error('Error al cargar logo del encabezado:', e);
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                      }}
+                      onLoad={() => console.log('Logo del encabezado cargado correctamente')}
                     />
                   )}
                   
@@ -461,7 +490,13 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
                             <img 
                               src={signatory.signature} 
                               alt="Firma" 
-                              className="max-h-16 w-auto mx-auto mb-2" 
+                              className="max-h-16 w-auto mx-auto mb-2"
+                              onError={(e) => {
+                                console.error('Error al cargar firma:', signatory.name, e);
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                              }}
+                              onLoad={() => console.log('Firma cargada correctamente:', signatory.name)}
                             />
                           ) : (
                             <div className="border-t-2 border-gray-800 w-48 mb-2 mx-auto"></div>
