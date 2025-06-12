@@ -147,7 +147,28 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
     }
   };
 
-  const downloadCertificate = () => {
+  const loadImageAsBase64 = async (imageUrl: string): Promise<string | null> => {
+    try {
+      if (imageUrl.startsWith('data:')) {
+        return imageUrl;
+      }
+      
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error('Error loading image:', error);
+      return null;
+    }
+  };
+
+  const downloadCertificate = async () => {
     try {
       console.log('Iniciando generación de PDF...');
       
@@ -166,21 +187,38 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
       const nit = companyConfig?.nit || 'NIT: 900.123.456-7';
       const city = companyConfig?.city || 'Bogotá, Colombia';
       
-      // Título de la empresa
+      let currentY = 30;
+      
+      // Cargar y agregar logo si existe
+      if (companyConfig?.logoUrl) {
+        try {
+          const logoBase64 = await loadImageAsBase64(companyConfig.logoUrl);
+          if (logoBase64) {
+            // Agregar logo en la esquina superior derecha
+            pdf.addImage(logoBase64, 'PNG', 150, 20, 30, 20);
+          }
+        } catch (error) {
+          console.error('Error adding logo to PDF:', error);
+        }
+      }
+      
+      // Título de la empresa (ajustar posición si hay logo)
       pdf.setFontSize(20);
       pdf.setTextColor(34, 197, 94); // Verde corporativo
-      pdf.text(companyName, 20, 30);
+      pdf.text(companyName, 20, currentY);
       
       // Información de la empresa
       pdf.setFontSize(10);
       pdf.setTextColor(0, 0, 0);
-      pdf.text(nit, 20, 40);
-      pdf.text(city, 20, 47);
+      pdf.text(nit, 20, currentY + 10);
+      pdf.text(city, 20, currentY + 17);
       
       // Línea separadora
       pdf.setDrawColor(34, 197, 94);
       pdf.setLineWidth(1);
-      pdf.line(20, 55, 190, 55);
+      pdf.line(20, currentY + 25, 190, currentY + 25);
+      
+      currentY += 45;
       
       // Título del certificado
       pdf.setFontSize(18);
@@ -188,14 +226,18 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
       const title = 'CERTIFICACION LABORAL';
       const titleWidth = pdf.getTextWidth(title);
       const pageWidth = pdf.internal.pageSize.width;
-      pdf.text(title, (pageWidth - titleWidth) / 2, 75);
+      pdf.text(title, (pageWidth - titleWidth) / 2, currentY);
+      
+      currentY += 10;
       
       // Fecha de expedición
       pdf.setFontSize(10);
       const currentDate = new Date().toLocaleDateString('es-ES');
       const dateText = `Fecha de expedicion: ${currentDate}`;
       const dateWidth = pdf.getTextWidth(dateText);
-      pdf.text(dateText, (pageWidth - dateWidth) / 2, 85);
+      pdf.text(dateText, (pageWidth - dateWidth) / 2, currentY);
+      
+      currentY += 25;
       
       // Contenido del certificado
       pdf.setFontSize(12);
@@ -203,23 +245,40 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
       
       // Dividir el texto en líneas para que quepa en el PDF
       const splitText = pdf.splitTextToSize(certificateContent, 170);
-      pdf.text(splitText, 20, 110);
+      pdf.text(splitText, 20, currentY);
       
       // Calcular la posición Y después del contenido
       const contentHeight = splitText.length * 7;
-      let currentY = 110 + contentHeight + 30;
+      currentY += contentHeight + 30;
       
       // Firmantes (si existen)
       if (companyConfig?.signatories && companyConfig.signatories.length > 0) {
         const signatureSpacing = 170 / companyConfig.signatories.length;
         
-        companyConfig.signatories.forEach((signatory, index) => {
+        for (let index = 0; index < companyConfig.signatories.length; index++) {
+          const signatory = companyConfig.signatories[index];
           const xPosition = 20 + (signatureSpacing * index) + (signatureSpacing / 2);
           
-          // Línea de firma
-          pdf.setDrawColor(0, 0, 0);
-          pdf.setLineWidth(0.5);
-          pdf.line(xPosition - 30, currentY, xPosition + 30, currentY);
+          // Cargar y agregar firma si existe
+          if (signatory.signature) {
+            try {
+              const signatureBase64 = await loadImageAsBase64(signatory.signature);
+              if (signatureBase64) {
+                pdf.addImage(signatureBase64, 'PNG', xPosition - 25, currentY - 10, 50, 15);
+              }
+            } catch (error) {
+              console.error('Error adding signature to PDF:', error);
+              // Si falla la imagen, dibujar línea de firma
+              pdf.setDrawColor(0, 0, 0);
+              pdf.setLineWidth(0.5);
+              pdf.line(xPosition - 30, currentY, xPosition + 30, currentY);
+            }
+          } else {
+            // Línea de firma si no hay imagen
+            pdf.setDrawColor(0, 0, 0);
+            pdf.setLineWidth(0.5);
+            pdf.line(xPosition - 30, currentY, xPosition + 30, currentY);
+          }
           
           // Nombre del firmante
           pdf.setFontSize(10);
@@ -230,7 +289,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
           pdf.setFontSize(8);
           const positionWidth = pdf.getTextWidth(signatory.position);
           pdf.text(signatory.position, xPosition - (positionWidth / 2), currentY + 14);
-        });
+        }
         
         currentY += 40;
       }
@@ -265,7 +324,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
 
       toast({
         title: "¡Descarga completada!",
-        description: "Tu certificado PDF se ha descargado correctamente"
+        description: "Tu certificado PDF se ha descargado correctamente con logo y firmas"
       });
     } catch (error) {
       console.error('Error al generar el PDF:', error);
