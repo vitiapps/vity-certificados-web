@@ -2,7 +2,9 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, FileSpreadsheet, Download, Settings, History } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Users, FileSpreadsheet, Download, Settings, History, LogOut } from 'lucide-react';
+import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import EmployeeList from './EmployeeList';
 import ExcelUploader from './ExcelUploader';
 import ExcelDownloader from './ExcelDownloader';
@@ -12,13 +14,32 @@ import CreateEmployeeDialog from './CreateEmployeeDialog';
 
 const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState('employees');
+  const { logout } = useAdminAuth();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-vity-green via-vity-green-light to-vity-green p-6">
       <div className="container mx-auto max-w-7xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Panel de Administración</h1>
-          <p className="text-white/80">Gestiona empleados, configuraciones y certificaciones</p>
+        <div className="mb-8 flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-2">Panel de Administración</h1>
+            <p className="text-white/80">Gestiona empleados, configuraciones y certificaciones</p>
+          </div>
+          <Button
+            onClick={handleLogout}
+            variant="outline"
+            className="bg-white/10 border-white/20 text-white hover:bg-white/20 flex items-center gap-2"
+          >
+            <LogOut className="h-4 w-4" />
+            Cerrar Sesión
+          </Button>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -102,17 +123,45 @@ const AdminPanel = () => {
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">
-            <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl">
-              <CardHeader>
-                <CardTitle className="text-vity-green flex items-center gap-2">
-                  <Settings className="h-5 w-5" />
-                  Configuración de Google Sheets
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <GoogleSheetsSetup />
-              </CardContent>
-            </Card>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl">
+                <CardHeader>
+                  <CardTitle className="text-vity-green flex items-center gap-2">
+                    <Settings className="h-5 w-5" />
+                    Configuración de Google Sheets
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <GoogleSheetsSetup />
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl">
+                <CardHeader>
+                  <CardTitle className="text-vity-green flex items-center gap-2">
+                    <Settings className="h-5 w-5" />
+                    Configuración de Certificados
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <p className="text-sm text-gray-600">
+                      Aquí puedes configurar los parámetros de los certificados laborales, 
+                      incluyendo logos, firmas y textos personalizados.
+                    </p>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h4 className="font-medium mb-2">Configuraciones disponibles:</h4>
+                      <ul className="text-sm text-gray-600 space-y-1">
+                        <li>• Logo de la empresa</li>
+                        <li>• Datos de la empresa (NIT, dirección)</li>
+                        <li>• Configuración de firmas</li>
+                        <li>• Colores y estilos del certificado</li>
+                      </ul>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
