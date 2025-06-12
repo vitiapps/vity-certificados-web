@@ -21,6 +21,8 @@ interface Employee {
   fecha_ingreso: string;
   fecha_retiro: string | null;
   sueldo: number | null;
+  promedio_salarial_mensual: number | null;
+  promedio_no_salarial_mensual: number | null;
   created_at: string;
 }
 
@@ -177,6 +179,8 @@ const EmployeeList: React.FC = () => {
                 <TableHead className="hidden md:table-cell">Fecha Ingreso</TableHead>
                 <TableHead className="hidden xl:table-cell">Fecha Retiro</TableHead>
                 <TableHead className="hidden lg:table-cell">Sueldo</TableHead>
+                <TableHead className="hidden xl:table-cell">Prom. Salarial</TableHead>
+                <TableHead className="hidden xl:table-cell">Prom. No Salarial</TableHead>
                 <TableHead>Acciones</TableHead>
               </TableRow>
             </TableHeader>
@@ -202,6 +206,8 @@ const EmployeeList: React.FC = () => {
                   <TableCell className="hidden md:table-cell">{formatDate(employee.fecha_ingreso)}</TableCell>
                   <TableCell className="hidden xl:table-cell">{formatDate(employee.fecha_retiro)}</TableCell>
                   <TableCell className="hidden lg:table-cell">{formatCurrency(employee.sueldo)}</TableCell>
+                  <TableCell className="hidden xl:table-cell">{formatCurrency(employee.promedio_salarial_mensual)}</TableCell>
+                  <TableCell className="hidden xl:table-cell">{formatCurrency(employee.promedio_no_salarial_mensual)}</TableCell>
                   <TableCell>
                     <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
                       <Button

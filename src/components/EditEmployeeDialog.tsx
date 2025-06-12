@@ -19,6 +19,8 @@ interface Employee {
   fecha_ingreso: string;
   fecha_retiro: string | null;
   sueldo: number | null;
+  promedio_salarial_mensual: number | null;
+  promedio_no_salarial_mensual: number | null;
 }
 
 interface EditEmployeeDialogProps {
@@ -110,6 +112,8 @@ const EditEmployeeDialog: React.FC<EditEmployeeDialogProps> = ({
         fecha_ingreso: formData.fecha_ingreso,
         fecha_retiro: formData.fecha_retiro || null,
         sueldo: formData.sueldo ? Number(formData.sueldo) : null,
+        promedio_salarial_mensual: formData.promedio_salarial_mensual ? Number(formData.promedio_salarial_mensual) : null,
+        promedio_no_salarial_mensual: formData.promedio_no_salarial_mensual ? Number(formData.promedio_no_salarial_mensual) : null,
         updated_at: new Date().toISOString()
       };
 
@@ -260,13 +264,33 @@ const EditEmployeeDialog: React.FC<EditEmployeeDialogProps> = ({
             />
           </div>
 
-          <div className="md:col-span-2">
+          <div>
             <label className="text-sm font-medium">Sueldo (opcional)</label>
             <Input
               type="number"
               value={formData.sueldo || ''}
               onChange={(e) => handleInputChange('sueldo', e.target.value ? Number(e.target.value) : null)}
               placeholder="Sueldo"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium">Promedio Salarial Mensual (opcional)</label>
+            <Input
+              type="number"
+              value={formData.promedio_salarial_mensual || ''}
+              onChange={(e) => handleInputChange('promedio_salarial_mensual', e.target.value ? Number(e.target.value) : null)}
+              placeholder="Promedio salarial mensual"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium">Promedio No Salarial Mensual (opcional)</label>
+            <Input
+              type="number"
+              value={formData.promedio_no_salarial_mensual || ''}
+              onChange={(e) => handleInputChange('promedio_no_salarial_mensual', e.target.value ? Number(e.target.value) : null)}
+              placeholder="Promedio no salarial mensual"
             />
           </div>
         </div>

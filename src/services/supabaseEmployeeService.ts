@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 interface EmployeeData {
@@ -10,6 +9,8 @@ interface EmployeeData {
   empresa: string;
   estado: string;
   sueldo: number;
+  promedio_salarial_mensual: number;
+  promedio_no_salarial_mensual: number;
   fecha_ingreso: string;
   fecha_retiro?: string;
   tipo_contrato: string;
@@ -53,6 +54,8 @@ class SupabaseEmployeeService {
         empresa: data.empresa,
         estado: data.estado,
         sueldo: data.sueldo || 0,
+        promedio_salarial_mensual: data.promedio_salarial_mensual || 0,
+        promedio_no_salarial_mensual: data.promedio_no_salarial_mensual || 0,
         fecha_ingreso: data.fecha_ingreso,
         fecha_retiro: data.fecha_retiro,
         tipo_contrato: data.tipo_contrato,

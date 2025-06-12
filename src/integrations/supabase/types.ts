@@ -134,6 +134,8 @@ export type Database = {
           id: string
           nombre: string
           numero_documento: string
+          promedio_no_salarial_mensual: number | null
+          promedio_salarial_mensual: number | null
           sueldo: number | null
           tipo_contrato: string
           tipo_documento: string
@@ -150,6 +152,8 @@ export type Database = {
           id?: string
           nombre: string
           numero_documento: string
+          promedio_no_salarial_mensual?: number | null
+          promedio_salarial_mensual?: number | null
           sueldo?: number | null
           tipo_contrato: string
           tipo_documento?: string
@@ -166,6 +170,8 @@ export type Database = {
           id?: string
           nombre?: string
           numero_documento?: string
+          promedio_no_salarial_mensual?: number | null
+          promedio_salarial_mensual?: number | null
           sueldo?: number | null
           tipo_contrato?: string
           tipo_documento?: string
