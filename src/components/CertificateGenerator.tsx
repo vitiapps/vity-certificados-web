@@ -63,6 +63,27 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
     return new Date(dateString).toLocaleDateString('es-ES');
   };
 
+  const getSalaryText = () => {
+    let salaryText = `un salario de ${formatCurrency(employeeData.sueldo)}`;
+    
+    const hasSalarialPromedio = employeeData.promedio_salarial_mensual && employeeData.promedio_salarial_mensual > 0;
+    const hasNoSalarialPromedio = employeeData.promedio_no_salarial_mensual && employeeData.promedio_no_salarial_mensual > 0;
+    
+    if (hasSalarialPromedio || hasNoSalarialPromedio) {
+      salaryText += ', con promedios mensuales de';
+      
+      if (hasSalarialPromedio && hasNoSalarialPromedio) {
+        salaryText += ` ${formatCurrency(employeeData.promedio_salarial_mensual)} salarial y ${formatCurrency(employeeData.promedio_no_salarial_mensual)} no salarial`;
+      } else if (hasSalarialPromedio) {
+        salaryText += ` ${formatCurrency(employeeData.promedio_salarial_mensual)} salarial`;
+      } else if (hasNoSalarialPromedio) {
+        salaryText += ` ${formatCurrency(employeeData.promedio_no_salarial_mensual)} no salarial`;
+      }
+    }
+    
+    return salaryText;
+  };
+
   const generateCertificate = async () => {
     setIsGenerating(true);
     const generatedCode = `VTY-${employeeData.numero_documento}-${Date.now().toString().slice(-6)}`;
@@ -104,6 +125,8 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
           cargo: employeeData.cargo,
           estado: employeeData.estado,
           sueldo: employeeData.sueldo,
+          promedio_salarial_mensual: employeeData.promedio_salarial_mensual,
+          promedio_no_salarial_mensual: employeeData.promedio_no_salarial_mensual,
           codigo_verificacion: code
         }
       });
@@ -343,18 +366,20 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
   };
 
   const getCertificateContent = () => {
+    const salaryText = getSalaryText();
+    
     switch (certificateType) {
       case 'empleado-activo':
-        return `La empresa ${employeeData.empresa} certifica que ${employeeData.nombre}, identificado(a) con ${employeeData.tipo_documento} No. ${employeeData.numero_documento}, se encuentra vinculado(a) laboralmente desde el ${formatDate(employeeData.fecha_ingreso)} desempeñando el cargo de ${employeeData.cargo} con un salario de ${formatCurrency(employeeData.sueldo)}, y a la fecha continúa prestando sus servicios de manera activa bajo contrato ${employeeData.tipo_contrato}.`;
+        return `La empresa ${employeeData.empresa} certifica que ${employeeData.nombre}, identificado(a) con ${employeeData.tipo_documento} No. ${employeeData.numero_documento}, se encuentra vinculado(a) laboralmente desde el ${formatDate(employeeData.fecha_ingreso)} desempeñando el cargo de ${employeeData.cargo} con ${salaryText}, y a la fecha continúa prestando sus servicios de manera activa bajo contrato ${employeeData.tipo_contrato}.`;
       
       case 'empleado-retirado':
-        return `La empresa ${employeeData.empresa} certifica que ${employeeData.nombre}, identificado(a) con ${employeeData.tipo_documento} No. ${employeeData.numero_documento}, laboró en la empresa desde el ${formatDate(employeeData.fecha_ingreso)} hasta el ${formatDate(employeeData.fecha_retiro)}, desempeñando el cargo de ${employeeData.cargo} con un salario de ${formatCurrency(employeeData.sueldo)} bajo contrato ${employeeData.tipo_contrato}, fecha en la cual se retiró de la organización.`;
+        return `La empresa ${employeeData.empresa} certifica que ${employeeData.nombre}, identificado(a) con ${employeeData.tipo_documento} No. ${employeeData.numero_documento}, laboró en la empresa desde el ${formatDate(employeeData.fecha_ingreso)} hasta el ${formatDate(employeeData.fecha_retiro)}, desempeñando el cargo de ${employeeData.cargo} con ${salaryText} bajo contrato ${employeeData.tipo_contrato}, fecha en la cual se retiró de la organización.`;
       
       case 'historial-completo':
         const statusText = employeeData.estado === 'ACTIVO' 
           ? `se encuentra vinculado(a) laboralmente desde el ${formatDate(employeeData.fecha_ingreso)} y a la fecha continúa prestando sus servicios` 
           : `laboró en la empresa desde el ${formatDate(employeeData.fecha_ingreso)} hasta el ${formatDate(employeeData.fecha_retiro)}`;
-        return `La empresa ${employeeData.empresa} certifica que ${employeeData.nombre}, identificado(a) con ${employeeData.tipo_documento} No. ${employeeData.numero_documento}, ${statusText} desempeñando el cargo de ${employeeData.cargo} con un salario de ${formatCurrency(employeeData.sueldo)} bajo contrato ${employeeData.tipo_contrato}. Estado actual: ${employeeData.estado}.`;
+        return `La empresa ${employeeData.empresa} certifica que ${employeeData.nombre}, identificado(a) con ${employeeData.tipo_documento} No. ${employeeData.numero_documento}, ${statusText} desempeñando el cargo de ${employeeData.cargo} con ${salaryText} bajo contrato ${employeeData.tipo_contrato}. Estado actual: ${employeeData.estado}.`;
       
       default:
         return '';
