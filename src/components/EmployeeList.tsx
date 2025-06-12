@@ -1,12 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Edit } from 'lucide-react';
+import { Edit, UserPlus } from 'lucide-react';
 import EditEmployeeDialog from './EditEmployeeDialog';
+import CreateEmployeeDialog from './CreateEmployeeDialog';
 
 interface Employee {
   id: string;
@@ -33,6 +33,7 @@ const EmployeeList: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -127,6 +128,18 @@ const EmployeeList: React.FC = () => {
     fetchEmployees();
   };
 
+  const handleCreateEmployee = () => {
+    setIsCreateDialogOpen(true);
+  };
+
+  const handleCloseCreateDialog = () => {
+    setIsCreateDialogOpen(false);
+  };
+
+  const handleEmployeeCreated = () => {
+    fetchEmployees();
+  };
+
   const formatCurrency = (amount: number | null): string => {
     if (amount === null) return 'N/A';
     return new Intl.NumberFormat('es-CO', {
@@ -147,9 +160,19 @@ const EmployeeList: React.FC = () => {
         <h3 className="text-lg md:text-xl font-semibold text-gray-800">
           Lista de Empleados ({filteredEmployees.length})
         </h3>
-        <Button onClick={fetchEmployees} disabled={isLoading} size="sm">
-          {isLoading ? 'Cargando...' : 'Actualizar'}
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button 
+            onClick={handleCreateEmployee}
+            className="bg-vity-green hover:bg-vity-green-dark text-white flex items-center gap-2"
+            size="sm"
+          >
+            <UserPlus size={16} />
+            Crear Empleado
+          </Button>
+          <Button onClick={fetchEmployees} disabled={isLoading} size="sm">
+            {isLoading ? 'Cargando...' : 'Actualizar'}
+          </Button>
+        </div>
       </div>
 
       <Input
@@ -250,6 +273,12 @@ const EmployeeList: React.FC = () => {
         isOpen={isEditDialogOpen}
         onClose={handleCloseEditDialog}
         onUpdate={handleEmployeeUpdate}
+      />
+
+      <CreateEmployeeDialog
+        isOpen={isCreateDialogOpen}
+        onClose={handleCloseCreateDialog}
+        onSuccess={handleEmployeeCreated}
       />
     </div>
   );
