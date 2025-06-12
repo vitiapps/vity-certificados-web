@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Info } from 'lucide-react';
 import * as XLSX from 'xlsx';
+
 interface UploadStatus {
   isUploading: boolean;
   progress: number;
@@ -14,6 +16,7 @@ interface UploadStatus {
   success: boolean;
   error: string | null;
 }
+
 const ExcelUploader: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>({
@@ -23,9 +26,8 @@ const ExcelUploader: React.FC = () => {
     success: false,
     error: null
   });
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
+
   const resetUploadStatus = () => {
     setUploadStatus({
       isUploading: false,
@@ -35,6 +37,7 @@ const ExcelUploader: React.FC = () => {
       error: null
     });
   };
+
   const updateProgress = (progress: number, step: string) => {
     setUploadStatus(prev => ({
       ...prev,
@@ -42,6 +45,7 @@ const ExcelUploader: React.FC = () => {
       currentStep: step
     }));
   };
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
     if (selectedFile) {
@@ -49,15 +53,14 @@ const ExcelUploader: React.FC = () => {
       setFile(selectedFile);
     }
   };
+
   const processExcelFile = useCallback(async (file: File) => {
     return new Promise<any[]>((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = e => {
         try {
           const data = new Uint8Array(e.target?.result as ArrayBuffer);
-          const workbook = XLSX.read(data, {
-            type: 'array'
-          });
+          const workbook = XLSX.read(data, { type: 'array' });
           const sheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[sheetName];
           const jsonData = XLSX.utils.sheet_to_json(worksheet);
@@ -70,6 +73,7 @@ const ExcelUploader: React.FC = () => {
       reader.readAsArrayBuffer(file);
     });
   }, []);
+
   const uploadFile = async () => {
     if (!file) {
       toast({
@@ -131,9 +135,7 @@ const ExcelUploader: React.FC = () => {
           estado: row.estado?.toString().trim() || 'Activo',
           fecha_ingreso: row.fecha_ingreso || new Date().toISOString().split('T')[0],
           fecha_retiro: row.fecha_retiro || null,
-          sueldo: row.sueldo ? parseFloat(row.sueldo.toString()) : null,
-          promedio_salarial_mensual: row.promedio_salarial_mensual ? parseFloat(row.promedio_salarial_mensual.toString()) : 0,
-          promedio_no_salarial_mensual: row.promedio_no_salarial_mensual ? parseFloat(row.promedio_no_salarial_mensual.toString()) : 0
+          sueldo: row.sueldo ? parseFloat(row.sueldo.toString()) : null
         }));
 
         updateProgress(
@@ -197,90 +199,106 @@ const ExcelUploader: React.FC = () => {
       });
     }
   };
-  return <div className="space-y-6">
-      <Card className="border border-gray-200">
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Upload className="h-5 w-5 text-vity-green" />
-            Cargar Archivo Excel
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-3">
-            <label htmlFor="excel-file" className="block text-sm font-medium text-gray-700">
-              Seleccionar archivo Excel (.xlsx, .xls)
-            </label>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="flex-1">
-                <Input id="excel-file" type="file" accept=".xlsx,.xls" onChange={handleFileChange} disabled={uploadStatus.isUploading} className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-vity-green file:text-white hover:file:bg-vity-green-dark" />
-              </div>
-              <Button onClick={uploadFile} disabled={!file || uploadStatus.isUploading} className="bg-vity-green hover:bg-vity-green-dark flex items-center gap-2 whitespace-nowrap">
-                <FileSpreadsheet className="h-4 w-4" />
-                {uploadStatus.isUploading ? 'Cargando...' : 'Subir Archivo'}
-              </Button>
+
+  return (
+    <div className="space-y-6">
+      <div className="space-y-4">
+        <div className="space-y-3">
+          <label htmlFor="excel-file" className="block text-sm font-medium text-gray-700">
+            Seleccionar archivo Excel (.xlsx, .xls)
+          </label>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1">
+              <Input 
+                id="excel-file" 
+                type="file" 
+                accept=".xlsx,.xls" 
+                onChange={handleFileChange} 
+                disabled={uploadStatus.isUploading} 
+                className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-vity-green file:text-white hover:file:bg-vity-green-dark" 
+              />
             </div>
+            <Button 
+              onClick={uploadFile} 
+              disabled={!file || uploadStatus.isUploading} 
+              className="bg-vity-green hover:bg-vity-green-dark flex items-center gap-2 whitespace-nowrap"
+            >
+              <FileSpreadsheet className="h-4 w-4" />
+              {uploadStatus.isUploading ? 'Cargando...' : 'Subir Archivo'}
+            </Button>
           </div>
+        </div>
 
-          {file && !uploadStatus.isUploading && !uploadStatus.success && <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
-              <p className="text-sm text-gray-700">
-                <strong>Archivo seleccionado:</strong> {file.name}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                Tamaño: {(file.size / 1024 / 1024).toFixed(2)} MB
-              </p>
-            </div>}
-
-          {uploadStatus.isUploading && <div className="space-y-3 p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-vity-green border-t-transparent rounded-full animate-spin"></div>
-                <span className="text-sm text-gray-600">{uploadStatus.currentStep}</span>
-              </div>
-              <Progress value={uploadStatus.progress} className="w-full" />
-              <p className="text-xs text-gray-500 text-center">
-                {uploadStatus.progress.toFixed(0)}% completado
-              </p>
-            </div>}
-
-          {uploadStatus.success && <div className="p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-600" />
-              <p className="text-sm text-green-800">{uploadStatus.currentStep}</p>
-            </div>}
-
-          {uploadStatus.error && <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
-              <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm text-red-800 font-medium">Error en la carga</p>
-                <p className="text-xs text-red-600 mt-1">{uploadStatus.error}</p>
-              </div>
-            </div>}
-        </CardContent>
-      </Card>
-
-      <Card className="border border-gray-200">
-        
-        <CardContent>
-          
-
-          <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg mt-4">
-            <p className="text-xs text-yellow-800">
-              <strong>Notas importantes:</strong><br />
-              • <strong>nombre</strong> - Ejemplo: Juan Pérez<br />
-              • <strong>numero_documento</strong> - Ejemplo: 12345678<br />
-              • <strong>tipo_documento</strong> - Ejemplo: CC, CE, TI<br />
-              • <strong>correo</strong> - Ejemplo: juan@email.com<br />
-              • <strong>cargo</strong> - Ejemplo: Desarrollador<br />
-              • <strong>empresa</strong> - Ejemplo: Vity SAS<br />
-              • <strong>tipo_contrato</strong> - Ejemplo: Indefinido, Fijo<br />
-              • <strong>fecha_ingreso</strong> - Formato: YYYY-MM-DD (ej: 2024-01-15)<br />
-              • <strong>estado</strong> - Ejemplo: Activo, Inactivo<br />
-              • <strong>fecha_retiro</strong> - Formato: YYYY-MM-DD (opcional, puede estar vacía)<br />
-              • <strong>sueldo</strong> - Ejemplo: 3500000 (numérico sin puntos ni comas)<br />
-              • <strong>promedio_salarial_mensual</strong> - Ejemplo: 3200000 (numérico sin puntos ni comas)<br />
-              • <strong>promedio_no_salarial_mensual</strong> - Ejemplo: 800000 (numérico sin puntos ni comas)
+        {file && !uploadStatus.isUploading && !uploadStatus.success && (
+          <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+            <p className="text-sm text-gray-700">
+              <strong>Archivo seleccionado:</strong> {file.name}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Tamaño: {(file.size / 1024 / 1024).toFixed(2)} MB
             </p>
           </div>
+        )}
+
+        {uploadStatus.isUploading && (
+          <div className="space-y-3 p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-vity-green border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-sm text-gray-600">{uploadStatus.currentStep}</span>
+            </div>
+            <Progress value={uploadStatus.progress} className="w-full" />
+            <p className="text-xs text-gray-500 text-center">
+              {uploadStatus.progress.toFixed(0)}% completado
+            </p>
+          </div>
+        )}
+
+        {uploadStatus.success && (
+          <div className="p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
+            <CheckCircle className="h-5 w-5 text-green-600" />
+            <p className="text-sm text-green-800">{uploadStatus.currentStep}</p>
+          </div>
+        )}
+
+        {uploadStatus.error && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+            <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm text-red-800 font-medium">Error en la carga</p>
+              <p className="text-xs text-red-600 mt-1">{uploadStatus.error}</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <Card className="border border-gray-200">
+        <CardHeader>
+          <CardTitle className="text-vity-green flex items-center gap-2">
+            <Info className="h-5 w-5" />
+            Formato del Archivo Excel
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3 text-sm text-gray-600">
+            <p className="font-medium">El archivo Excel debe contener las siguientes columnas:</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <div>• <strong>nombre</strong> - Ejemplo: Juan Pérez</div>
+              <div>• <strong>numero_documento</strong> - Ejemplo: 12345678</div>
+              <div>• <strong>tipo_documento</strong> - Ejemplo: CC, CE, TI</div>
+              <div>• <strong>correo</strong> - Ejemplo: juan@email.com</div>
+              <div>• <strong>cargo</strong> - Ejemplo: Desarrollador</div>
+              <div>• <strong>empresa</strong> - Ejemplo: Vity SAS</div>
+              <div>• <strong>tipo_contrato</strong> - Ejemplo: Indefinido, Fijo</div>
+              <div>• <strong>estado</strong> - Ejemplo: Activo, Inactivo</div>
+              <div>• <strong>fecha_ingreso</strong> - Formato: YYYY-MM-DD</div>
+              <div>• <strong>fecha_retiro</strong> - Formato: YYYY-MM-DD (opcional)</div>
+              <div>• <strong>sueldo</strong> - Ejemplo: 3500000 (opcional)</div>
+            </div>
+          </div>
         </CardContent>
       </Card>
-    </div>;
+    </div>
+  );
 };
+
 export default ExcelUploader;

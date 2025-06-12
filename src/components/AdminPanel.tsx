@@ -3,12 +3,12 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Users, FileSpreadsheet, Download, Settings, History } from 'lucide-react';
-import EmployeeDataManager from './EmployeeDataManager';
 import EmployeeList from './EmployeeList';
 import ExcelUploader from './ExcelUploader';
 import ExcelDownloader from './ExcelDownloader';
 import CertificateHistory from './CertificateHistory';
 import GoogleSheetsSetup from './GoogleSheetsSetup';
+import CreateEmployeeDialog from './CreateEmployeeDialog';
 
 const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState('employees');
@@ -46,29 +46,17 @@ const AdminPanel = () => {
           </TabsList>
 
           <TabsContent value="employees" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-1">
-                <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl">
-                  <CardHeader>
-                    <CardTitle className="text-vity-green">Agregar Empleado</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <EmployeeDataManager />
-                  </CardContent>
-                </Card>
-              </div>
-              
-              <div className="lg:col-span-2">
-                <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl">
-                  <CardHeader>
-                    <CardTitle className="text-vity-green">Lista de Empleados</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <EmployeeList />
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
+            <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl">
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle className="text-vity-green">Lista de Empleados</CardTitle>
+                  <CreateEmployeeDialog />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <EmployeeList />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="upload" className="space-y-6">

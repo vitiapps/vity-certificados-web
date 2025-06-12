@@ -19,11 +19,13 @@ interface EmployeeFormData {
   fecha_ingreso: string;
   fecha_retiro?: string;
   sueldo?: number;
-  promedio_salarial_mensual?: number;
-  promedio_no_salarial_mensual?: number;
 }
 
-const EmployeeDataManager: React.FC = () => {
+interface EmployeeDataManagerProps {
+  onEmployeeCreated?: () => void;
+}
+
+const EmployeeDataManager: React.FC<EmployeeDataManagerProps> = ({ onEmployeeCreated }) => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   
@@ -39,9 +41,7 @@ const EmployeeDataManager: React.FC = () => {
       estado: 'Activo',
       fecha_ingreso: '',
       fecha_retiro: '',
-      sueldo: 0,
-      promedio_salarial_mensual: 0,
-      promedio_no_salarial_mensual: 0
+      sueldo: 0
     }
   });
 
@@ -61,9 +61,7 @@ const EmployeeDataManager: React.FC = () => {
         estado: data.estado,
         fecha_ingreso: data.fecha_ingreso,
         fecha_retiro: data.fecha_retiro || null,
-        sueldo: data.sueldo || null,
-        promedio_salarial_mensual: data.promedio_salarial_mensual || null,
-        promedio_no_salarial_mensual: data.promedio_no_salarial_mensual || null
+        sueldo: data.sueldo || null
       };
 
       const { error } = await supabase
@@ -83,6 +81,7 @@ const EmployeeDataManager: React.FC = () => {
           description: "El empleado se ha creado correctamente"
         });
         form.reset();
+        onEmployeeCreated?.();
       }
     } catch (error) {
       console.error('Error inesperado:', error);
@@ -98,10 +97,6 @@ const EmployeeDataManager: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <h3 className="text-lg md:text-xl font-semibold text-gray-800">
-        Crear Nuevo Empleado
-      </h3>
-      
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -142,7 +137,7 @@ const EmployeeDataManager: React.FC = () => {
                 <FormItem>
                   <FormLabel>Tipo de Documento</FormLabel>
                   <FormControl>
-                    <select {...field} className="w-full px-3 py-2 border border-gray-300 rounded-md">
+                    <select {...field} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-vity-green focus:border-transparent">
                       <option value="CC">CC</option>
                       <option value="CE">CE</option>
                       <option value="PA">PA</option>
@@ -211,7 +206,7 @@ const EmployeeDataManager: React.FC = () => {
                 <FormItem>
                   <FormLabel>Tipo de Contrato</FormLabel>
                   <FormControl>
-                    <select {...field} className="w-full px-3 py-2 border border-gray-300 rounded-md">
+                    <select {...field} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-vity-green focus:border-transparent">
                       <option value="Indefinido">Indefinido</option>
                       <option value="Fijo">Fijo</option>
                       <option value="Temporal">Temporal</option>
@@ -231,7 +226,7 @@ const EmployeeDataManager: React.FC = () => {
                 <FormItem>
                   <FormLabel>Estado</FormLabel>
                   <FormControl>
-                    <select {...field} className="w-full px-3 py-2 border border-gray-300 rounded-md">
+                    <select {...field} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-vity-green focus:border-transparent">
                       <option value="Activo">Activo</option>
                       <option value="Inactivo">Inactivo</option>
                       <option value="Retirado">Retirado</option>
@@ -289,53 +284,17 @@ const EmployeeDataManager: React.FC = () => {
                 </FormItem>
               )}
             />
-
-            <FormField
-              control={form.control}
-              name="promedio_salarial_mensual"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Promedio Salarial Mensual (opcional)</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      placeholder="0" 
-                      {...field}
-                      onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : 0)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="promedio_no_salarial_mensual"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Promedio No Salarial Mensual (opcional)</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      placeholder="0" 
-                      {...field}
-                      onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : 0)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
           </div>
 
-          <Button 
-            type="submit" 
-            className="w-full md:w-auto" 
-            disabled={isLoading}
-          >
-            {isLoading ? 'Creando...' : 'Crear Empleado'}
-          </Button>
+          <div className="flex justify-end gap-3 pt-4">
+            <Button 
+              type="submit" 
+              className="bg-vity-green hover:bg-vity-green-dark" 
+              disabled={isLoading}
+            >
+              {isLoading ? 'Creando...' : 'Crear Empleado'}
+            </Button>
+          </div>
         </form>
       </Form>
     </div>
