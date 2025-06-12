@@ -23,11 +23,7 @@ interface EmployeeFormData {
   promedio_no_salarial_mensual?: number;
 }
 
-interface EmployeeDataManagerProps {
-  onEmployeeCreated?: () => void;
-}
-
-const EmployeeDataManager: React.FC<EmployeeDataManagerProps> = ({ onEmployeeCreated }) => {
+const EmployeeDataManager: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   
@@ -87,7 +83,6 @@ const EmployeeDataManager: React.FC<EmployeeDataManagerProps> = ({ onEmployeeCre
           description: "El empleado se ha creado correctamente"
         });
         form.reset();
-        onEmployeeCreated?.();
       }
     } catch (error) {
       console.error('Error inesperado:', error);
@@ -103,6 +98,10 @@ const EmployeeDataManager: React.FC<EmployeeDataManagerProps> = ({ onEmployeeCre
 
   return (
     <div className="space-y-6">
+      <h3 className="text-lg md:text-xl font-semibold text-gray-800">
+        Crear Nuevo Empleado
+      </h3>
+      
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -143,7 +142,7 @@ const EmployeeDataManager: React.FC<EmployeeDataManagerProps> = ({ onEmployeeCre
                 <FormItem>
                   <FormLabel>Tipo de Documento</FormLabel>
                   <FormControl>
-                    <select {...field} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-vity-green focus:border-transparent">
+                    <select {...field} className="w-full px-3 py-2 border border-gray-300 rounded-md">
                       <option value="CC">CC</option>
                       <option value="CE">CE</option>
                       <option value="PA">PA</option>
@@ -212,7 +211,7 @@ const EmployeeDataManager: React.FC<EmployeeDataManagerProps> = ({ onEmployeeCre
                 <FormItem>
                   <FormLabel>Tipo de Contrato</FormLabel>
                   <FormControl>
-                    <select {...field} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-vity-green focus:border-transparent">
+                    <select {...field} className="w-full px-3 py-2 border border-gray-300 rounded-md">
                       <option value="Indefinido">Indefinido</option>
                       <option value="Fijo">Fijo</option>
                       <option value="Temporal">Temporal</option>
@@ -232,7 +231,7 @@ const EmployeeDataManager: React.FC<EmployeeDataManagerProps> = ({ onEmployeeCre
                 <FormItem>
                   <FormLabel>Estado</FormLabel>
                   <FormControl>
-                    <select {...field} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-vity-green focus:border-transparent">
+                    <select {...field} className="w-full px-3 py-2 border border-gray-300 rounded-md">
                       <option value="Activo">Activo</option>
                       <option value="Inactivo">Inactivo</option>
                       <option value="Retirado">Retirado</option>
@@ -330,15 +329,13 @@ const EmployeeDataManager: React.FC<EmployeeDataManagerProps> = ({ onEmployeeCre
             />
           </div>
 
-          <div className="flex justify-end gap-3 pt-4">
-            <Button 
-              type="submit" 
-              className="bg-vity-green hover:bg-vity-green-dark" 
-              disabled={isLoading}
-            >
-              {isLoading ? 'Creando...' : 'Crear Empleado'}
-            </Button>
-          </div>
+          <Button 
+            type="submit" 
+            className="w-full md:w-auto" 
+            disabled={isLoading}
+          >
+            {isLoading ? 'Creando...' : 'Crear Empleado'}
+          </Button>
         </form>
       </Form>
     </div>
