@@ -79,6 +79,7 @@ const ExcelUploader: React.FC = () => {
       });
       return;
     }
+
     setUploadStatus({
       isUploading: true,
       progress: 0,
@@ -86,29 +87,39 @@ const ExcelUploader: React.FC = () => {
       success: false,
       error: null
     });
+
     try {
       updateProgress(10, 'Leyendo archivo Excel...');
       await new Promise(resolve => setTimeout(resolve, 500));
+      
       const jsonData = await processExcelFile(file);
+      
       if (!jsonData || jsonData.length === 0) {
         throw new Error('El archivo está vacío o no contiene datos válidos');
       }
+
       updateProgress(30, 'Validando datos...');
       await new Promise(resolve => setTimeout(resolve, 500));
+      
       const validData = jsonData.filter(row => {
         const requiredFields = ['nombre', 'numero_documento', 'correo'];
         return requiredFields.every(field => row[field] && row[field].toString().trim() !== '');
       });
+
       if (validData.length === 0) {
         throw new Error('No se encontraron registros válidos en el archivo');
       }
+
       updateProgress(50, 'Preparando datos para insertar...');
       await new Promise(resolve => setTimeout(resolve, 300));
+      
       const batchSize = 50;
       const totalBatches = Math.ceil(validData.length / batchSize);
       let processedBatches = 0;
+
       for (let i = 0; i < validData.length; i += batchSize) {
         const batch = validData.slice(i, i + batchSize);
+        
         const formattedBatch = batch.map(row => ({
           nombre: row.nombre?.toString().trim() || '',
           numero_documento: row.numero_documento?.toString().trim() || '',
@@ -120,22 +131,33 @@ const ExcelUploader: React.FC = () => {
           estado: row.estado?.toString().trim() || 'Activo',
           fecha_ingreso: row.fecha_ingreso || new Date().toISOString().split('T')[0],
           fecha_retiro: row.fecha_retiro || null,
-          sueldo: row.sueldo ? parseFloat(row.sueldo.toString()) : null
+          sueldo: row.sueldo ? parseFloat(row.sueldo.toString()) : null,
+          promedio_salarial_mensual: row.promedio_salarial_mensual ? parseFloat(row.promedio_salarial_mensual.toString()) : 0,
+          promedio_no_salarial_mensual: row.promedio_no_salarial_mensual ? parseFloat(row.promedio_no_salarial_mensual.toString()) : 0
         }));
-        updateProgress(50 + processedBatches / totalBatches * 40, `Insertando lote ${processedBatches + 1} de ${totalBatches}...`);
-        const {
-          error
-        } = await supabase.from('empleados').upsert(formattedBatch, {
-          onConflict: 'numero_documento',
-          ignoreDuplicates: false
-        });
+
+        updateProgress(
+          50 + (processedBatches / totalBatches * 40), 
+          `Insertando lote ${processedBatches + 1} de ${totalBatches}...`
+        );
+
+        const { error } = await supabase
+          .from('empleados')
+          .upsert(formattedBatch, {
+            onConflict: 'numero_documento',
+            ignoreDuplicates: false
+          });
+
         if (error) {
           throw error;
         }
+
         processedBatches++;
         await new Promise(resolve => setTimeout(resolve, 200));
       }
+
       updateProgress(100, 'Carga completada exitosamente');
+      
       setUploadStatus({
         isUploading: false,
         progress: 100,
@@ -143,19 +165,23 @@ const ExcelUploader: React.FC = () => {
         success: true,
         error: null
       });
+
       toast({
         title: "Éxito",
         description: `Se cargaron ${validData.length} empleados correctamente`
       });
+
       setTimeout(() => {
         setFile(null);
         resetUploadStatus();
         const fileInput = document.getElementById('excel-file') as HTMLInputElement;
         if (fileInput) fileInput.value = '';
       }, 3000);
+
     } catch (error) {
       console.error('Error uploading file:', error);
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      
       setUploadStatus({
         isUploading: false,
         progress: 0,
@@ -163,6 +189,7 @@ const ExcelUploader: React.FC = () => {
         success: false,
         error: errorMessage
       });
+
       toast({
         title: "Error",
         description: `Error al cargar el archivo: ${errorMessage}`,
@@ -247,7 +274,9 @@ const ExcelUploader: React.FC = () => {
               • <strong>fecha_ingreso</strong> - Formato: YYYY-MM-DD (ej: 2024-01-15)<br />
               • <strong>estado</strong> - Ejemplo: Activo, Inactivo<br />
               • <strong>fecha_retiro</strong> - Formato: YYYY-MM-DD (opcional, puede estar vacía)<br />
-              • <strong>sueldo</strong> - Ejemplo: 3500000 (numérico sin puntos ni comas)
+              • <strong>sueldo</strong> - Ejemplo: 3500000 (numérico sin puntos ni comas)<br />
+              • <strong>promedio_salarial_mensual</strong> - Ejemplo: 3200000 (numérico sin puntos ni comas)<br />
+              • <strong>promedio_no_salarial_mensual</strong> - Ejemplo: 800000 (numérico sin puntos ni comas)
             </p>
           </div>
         </CardContent>
