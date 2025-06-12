@@ -149,9 +149,16 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
 
   const downloadCertificate = () => {
     try {
-      const pdf = new jsPDF();
+      console.log('Iniciando generación de PDF...');
       
-      // Configuración del PDF
+      // Crear una nueva instancia de jsPDF
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+      
+      // Configurar fuente
       pdf.setFont('helvetica');
       
       // Encabezado de la empresa
@@ -159,10 +166,12 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
       const nit = companyConfig?.nit || 'NIT: 900.123.456-7';
       const city = companyConfig?.city || 'Bogotá, Colombia';
       
+      // Título de la empresa
       pdf.setFontSize(20);
       pdf.setTextColor(34, 197, 94); // Verde corporativo
       pdf.text(companyName, 20, 30);
       
+      // Información de la empresa
       pdf.setFontSize(10);
       pdf.setTextColor(0, 0, 0);
       pdf.text(nit, 20, 40);
@@ -176,7 +185,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
       // Título del certificado
       pdf.setFontSize(18);
       pdf.setTextColor(0, 0, 0);
-      const title = 'CERTIFICACIÓN LABORAL';
+      const title = 'CERTIFICACION LABORAL';
       const titleWidth = pdf.getTextWidth(title);
       const pageWidth = pdf.internal.pageSize.width;
       pdf.text(title, (pageWidth - titleWidth) / 2, 75);
@@ -184,7 +193,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
       // Fecha de expedición
       pdf.setFontSize(10);
       const currentDate = new Date().toLocaleDateString('es-ES');
-      const dateText = `Fecha de expedición: ${currentDate}`;
+      const dateText = `Fecha de expedicion: ${currentDate}`;
       const dateWidth = pdf.getTextWidth(dateText);
       pdf.text(dateText, (pageWidth - dateWidth) / 2, 85);
       
@@ -230,11 +239,11 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
       pdf.setFontSize(9);
       pdf.setTextColor(100, 100, 100);
       
-      const footerText1 = 'Este certificado es válido con firma digital y código de verificación';
+      const footerText1 = 'Este certificado es valido con firma digital y codigo de verificacion';
       const footerWidth1 = pdf.getTextWidth(footerText1);
       pdf.text(footerText1, (pageWidth - footerWidth1) / 2, currentY);
       
-      const codeText = `Código: ${verificationCode}`;
+      const codeText = `Codigo: ${verificationCode}`;
       const codeWidth = pdf.getTextWidth(codeText);
       pdf.text(codeText, (pageWidth - codeWidth) / 2, currentY + 10);
       
@@ -245,9 +254,14 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
         pdf.text(footerLines, 20, currentY + 25);
       }
       
-      // Guardar el PDF
+      // Guardar el PDF con nombre específico
       const fileName = `certificado_laboral_${employeeData.numero_documento}_${Date.now()}.pdf`;
+      console.log('Guardando PDF como:', fileName);
+      
+      // Esta línea es crucial - save() descarga el archivo como PDF
       pdf.save(fileName);
+
+      console.log('PDF generado exitosamente');
 
       toast({
         title: "¡Descarga completada!",
@@ -268,16 +282,16 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
     
     switch (certificateType) {
       case 'empleado-activo':
-        return `La empresa ${employeeData.empresa} certifica que ${employeeData.nombre}, identificado(a) con ${employeeData.tipo_documento} No. ${employeeData.numero_documento}, se encuentra vinculado(a) laboralmente desde el ${formatDate(employeeData.fecha_ingreso)} desempeñando el cargo de ${employeeData.cargo} con ${salaryText}, y a la fecha continúa prestando sus servicios de manera activa bajo contrato ${employeeData.tipo_contrato}.`;
+        return `La empresa ${employeeData.empresa} certifica que ${employeeData.nombre}, identificado(a) con ${employeeData.tipo_documento} No. ${employeeData.numero_documento}, se encuentra vinculado(a) laboralmente desde el ${formatDate(employeeData.fecha_ingreso)} desempenando el cargo de ${employeeData.cargo} con ${salaryText}, y a la fecha continua prestando sus servicios de manera activa bajo contrato ${employeeData.tipo_contrato}.`;
       
       case 'empleado-retirado':
-        return `La empresa ${employeeData.empresa} certifica que ${employeeData.nombre}, identificado(a) con ${employeeData.tipo_documento} No. ${employeeData.numero_documento}, laboró en la empresa desde el ${formatDate(employeeData.fecha_ingreso)} hasta el ${formatDate(employeeData.fecha_retiro)}, desempeñando el cargo de ${employeeData.cargo} con ${salaryText} bajo contrato ${employeeData.tipo_contrato}, fecha en la cual se retiró de la organización.`;
+        return `La empresa ${employeeData.empresa} certifica que ${employeeData.nombre}, identificado(a) con ${employeeData.tipo_documento} No. ${employeeData.numero_documento}, laboro en la empresa desde el ${formatDate(employeeData.fecha_ingreso)} hasta el ${formatDate(employeeData.fecha_retiro)}, desempenando el cargo de ${employeeData.cargo} con ${salaryText} bajo contrato ${employeeData.tipo_contrato}, fecha en la cual se retiro de la organizacion.`;
       
       case 'historial-completo':
         const statusText = employeeData.estado === 'ACTIVO' 
-          ? `se encuentra vinculado(a) laboralmente desde el ${formatDate(employeeData.fecha_ingreso)} y a la fecha continúa prestando sus servicios` 
-          : `laboró en la empresa desde el ${formatDate(employeeData.fecha_ingreso)} hasta el ${formatDate(employeeData.fecha_retiro)}`;
-        return `La empresa ${employeeData.empresa} certifica que ${employeeData.nombre}, identificado(a) con ${employeeData.tipo_documento} No. ${employeeData.numero_documento}, ${statusText} desempeñando el cargo de ${employeeData.cargo} con ${salaryText} bajo contrato ${employeeData.tipo_contrato}. Estado actual: ${employeeData.estado}.`;
+          ? `se encuentra vinculado(a) laboralmente desde el ${formatDate(employeeData.fecha_ingreso)} y a la fecha continua prestando sus servicios` 
+          : `laboro en la empresa desde el ${formatDate(employeeData.fecha_ingreso)} hasta el ${formatDate(employeeData.fecha_retiro)}`;
+        return `La empresa ${employeeData.empresa} certifica que ${employeeData.nombre}, identificado(a) con ${employeeData.tipo_documento} No. ${employeeData.numero_documento}, ${statusText} desempenando el cargo de ${employeeData.cargo} con ${salaryText} bajo contrato ${employeeData.tipo_contrato}. Estado actual: ${employeeData.estado}.`;
       
       default:
         return '';
