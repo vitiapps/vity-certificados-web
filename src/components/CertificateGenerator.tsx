@@ -69,16 +69,23 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
     const hasSalarialPromedio = employeeData.promedio_salarial_mensual && employeeData.promedio_salarial_mensual > 0;
     const hasNoSalarialPromedio = employeeData.promedio_no_salarial_mensual && employeeData.promedio_no_salarial_mensual > 0;
     
+    let total = employeeData.sueldo || 0;
+    
     if (hasSalarialPromedio || hasNoSalarialPromedio) {
-      salaryText += ', con promedios mensuales de';
+      salaryText += ' mas';
       
       if (hasSalarialPromedio && hasNoSalarialPromedio) {
-        salaryText += ` ${formatCurrency(employeeData.promedio_salarial_mensual)} salarial y ${formatCurrency(employeeData.promedio_no_salarial_mensual)} no salarial`;
+        salaryText += ` un promedio salarial mensual de ${formatCurrency(employeeData.promedio_salarial_mensual)} y un promedio no salarial de ${formatCurrency(employeeData.promedio_no_salarial_mensual)}`;
+        total += employeeData.promedio_salarial_mensual + employeeData.promedio_no_salarial_mensual;
       } else if (hasSalarialPromedio) {
-        salaryText += ` ${formatCurrency(employeeData.promedio_salarial_mensual)} salarial`;
+        salaryText += ` un promedio salarial mensual de ${formatCurrency(employeeData.promedio_salarial_mensual)}`;
+        total += employeeData.promedio_salarial_mensual;
       } else if (hasNoSalarialPromedio) {
-        salaryText += ` ${formatCurrency(employeeData.promedio_no_salarial_mensual)} no salarial`;
+        salaryText += ` un promedio no salarial de ${formatCurrency(employeeData.promedio_no_salarial_mensual)}`;
+        total += employeeData.promedio_no_salarial_mensual;
       }
+      
+      salaryText += ` para un total de ${formatCurrency(total)}`;
     }
     
     return salaryText;
