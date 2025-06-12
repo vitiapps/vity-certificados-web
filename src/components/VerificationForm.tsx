@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface VerificationFormProps {
   employeeData: any;
@@ -20,21 +21,62 @@ const VerificationForm: React.FC<VerificationFormProps> = ({
   const [code, setCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [generatedCode, setGeneratedCode] = useState('');
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    // Generar código de verificación de 6 dígitos
-    const newCode = Math.floor(100000 + Math.random() * 900000).toString();
+    sendVerificationEmail();
+  }, []);
+
+  const generateVerificationCode = () => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  };
+
+  const sendVerificationEmail = async () => {
+    setIsSendingEmail(true);
+    const newCode = generateVerificationCode();
     setGeneratedCode(newCode);
     
-    // Simular envío de email
-    toast({
-      title: "Código enviado",
-      description: `Se ha enviado un código de verificación a ${employeeData.correo}`,
-    });
-    
-    console.log(`Código de verificación generado: ${newCode}`);
-  }, [employeeData.correo, toast]);
+    try {
+      console.log(`Enviando código de verificación: ${newCode} a ${employeeData.correo}`);
+      
+      const { data, error } = await supabase.functions.invoke('send-verification-email', {
+        body: {
+          employeeName: employeeData.nombre,
+          employeeEmail: employeeData.correo,
+          verificationCode: newCode,
+          companyName: employeeData.empresa
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.success) {
+        setEmailSent(true);
+        toast({
+          title: "📧 Email enviado",
+          description: `Se ha enviado el código de verificación a ${employeeData.correo}`,
+        });
+      } else {
+        throw new Error(data?.message || 'Error al enviar el email');
+      }
+    } catch (error) {
+      console.error('Error sending verification email:', error);
+      toast({
+        title: "Error al enviar email",
+        description: "No se pudo enviar el código. El código aparece en pantalla para pruebas.",
+        variant: "destructive"
+      });
+      
+      // Mostrar código en consola como fallback
+      console.log(`Código de verificación (fallback): ${newCode}`);
+    } finally {
+      setIsSendingEmail(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,16 +113,8 @@ const VerificationForm: React.FC<VerificationFormProps> = ({
   };
 
   const handleResendCode = () => {
-    const newCode = Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedCode(newCode);
+    sendVerificationEmail();
     setCode('');
-    
-    toast({
-      title: "Código reenviado",
-      description: `Se ha enviado un nuevo código a ${employeeData.correo}`,
-    });
-    
-    console.log(`Nuevo código de verificación: ${newCode}`);
   };
 
   return (
@@ -93,10 +127,21 @@ const VerificationForm: React.FC<VerificationFormProps> = ({
           <p className="text-gray-600 mt-2">
             Hola <strong>{employeeData.nombre}</strong>
           </p>
-          <p className="text-sm text-gray-500">
-            Se ha enviado un código de 6 dígitos a:<br />
-            <span className="font-medium">{employeeData.correo}</span>
-          </p>
+          {isSendingEmail ? (
+            <div className="flex items-center justify-center mt-4">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-vity-green mr-2"></div>
+              <p className="text-sm text-gray-500">Enviando código...</p>
+            </div>
+          ) : emailSent ? (
+            <p className="text-sm text-gray-500">
+              Se ha enviado un código de 6 dígitos a:<br />
+              <span className="font-medium">{employeeData.correo}</span>
+            </p>
+          ) : (
+            <p className="text-sm text-orange-600">
+              Error al enviar email. Revisa la consola del navegador para el código.
+            </p>
+          )}
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -111,7 +156,7 @@ const VerificationForm: React.FC<VerificationFormProps> = ({
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                 className="h-12 text-lg text-center border-2 border-gray-200 focus:border-vity-green focus:ring-vity-green/20 tracking-widest font-mono"
-                disabled={isLoading}
+                disabled={isLoading || isSendingEmail}
                 maxLength={6}
               />
             </div>
@@ -120,7 +165,7 @@ const VerificationForm: React.FC<VerificationFormProps> = ({
               <Button 
                 type="submit" 
                 className="w-full h-12 bg-vity-green hover:bg-vity-green-dark text-white font-semibold text-lg transition-all duration-200 transform hover:scale-105"
-                disabled={isLoading || code.length !== 6}
+                disabled={isLoading || code.length !== 6 || isSendingEmail}
               >
                 {isLoading ? 'Verificando...' : 'Verificar Código'}
               </Button>
@@ -131,9 +176,9 @@ const VerificationForm: React.FC<VerificationFormProps> = ({
                   variant="outline"
                   onClick={handleResendCode}
                   className="flex-1 h-10 border-vity-green text-vity-green hover:bg-vity-green/10"
-                  disabled={isLoading}
+                  disabled={isLoading || isSendingEmail}
                 >
-                  Reenviar Código
+                  {isSendingEmail ? 'Enviando...' : 'Reenviar Código'}
                 </Button>
                 
                 <Button 
@@ -141,7 +186,7 @@ const VerificationForm: React.FC<VerificationFormProps> = ({
                   variant="outline"
                   onClick={onBack}
                   className="flex-1 h-10"
-                  disabled={isLoading}
+                  disabled={isLoading || isSendingEmail}
                 >
                   Volver
                 </Button>
@@ -149,19 +194,21 @@ const VerificationForm: React.FC<VerificationFormProps> = ({
             </div>
           </form>
           
-          <div className="mt-6 p-4 bg-yellow-50 rounded-lg">
-            <p className="text-sm text-yellow-800 font-medium mb-2">
-              💡 Para probar la aplicación:
-            </p>
-            <div className="space-y-1">
-              <p className="text-xs text-yellow-700">
-                Código de verificación: <span className="font-mono font-bold text-lg text-yellow-900">{generatedCode}</span>
+          {!emailSent && (
+            <div className="mt-6 p-4 bg-yellow-50 rounded-lg">
+              <p className="text-sm text-yellow-800 font-medium mb-2">
+                💡 Para probar la aplicación (si el email falla):
               </p>
-              <p className="text-xs text-yellow-600">
-                También aparece en la consola del navegador
-              </p>
+              <div className="space-y-1">
+                <p className="text-xs text-yellow-700">
+                  Código de verificación: <span className="font-mono font-bold text-lg text-yellow-900">{generatedCode}</span>
+                </p>
+                <p className="text-xs text-yellow-600">
+                  También aparece en la consola del navegador
+                </p>
+              </div>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
     </div>
