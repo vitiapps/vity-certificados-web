@@ -6,6 +6,7 @@ import { Download, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabaseEmployeeService } from '@/services/supabaseEmployeeService';
 import { companyConfigService, CompanyCertificateConfig } from '@/services/companyConfigService';
+import jsPDF from 'jspdf';
 
 interface CertificateGeneratorProps {
   employeeData: any;
@@ -148,228 +149,118 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
 
   const downloadCertificate = () => {
     try {
-      const certificateHTML = generateCertificateHTML();
-      const blob = new Blob([certificateHTML], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `certificado_laboral_${employeeData.numero_documento}_${Date.now()}.html`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      const pdf = new jsPDF();
+      
+      // Configuración del PDF
+      pdf.setFont('helvetica');
+      
+      // Encabezado de la empresa
+      const companyName = companyConfig?.companyName || employeeData.empresa.toUpperCase();
+      const nit = companyConfig?.nit || 'NIT: 900.123.456-7';
+      const city = companyConfig?.city || 'Bogotá, Colombia';
+      
+      pdf.setFontSize(20);
+      pdf.setTextColor(34, 197, 94); // Verde corporativo
+      pdf.text(companyName, 20, 30);
+      
+      pdf.setFontSize(10);
+      pdf.setTextColor(0, 0, 0);
+      pdf.text(nit, 20, 40);
+      pdf.text(city, 20, 47);
+      
+      // Línea separadora
+      pdf.setDrawColor(34, 197, 94);
+      pdf.setLineWidth(1);
+      pdf.line(20, 55, 190, 55);
+      
+      // Título del certificado
+      pdf.setFontSize(18);
+      pdf.setTextColor(0, 0, 0);
+      const title = 'CERTIFICACIÓN LABORAL';
+      const titleWidth = pdf.getTextWidth(title);
+      const pageWidth = pdf.internal.pageSize.width;
+      pdf.text(title, (pageWidth - titleWidth) / 2, 75);
+      
+      // Fecha de expedición
+      pdf.setFontSize(10);
+      const currentDate = new Date().toLocaleDateString('es-ES');
+      const dateText = `Fecha de expedición: ${currentDate}`;
+      const dateWidth = pdf.getTextWidth(dateText);
+      pdf.text(dateText, (pageWidth - dateWidth) / 2, 85);
+      
+      // Contenido del certificado
+      pdf.setFontSize(12);
+      const certificateContent = getCertificateContent();
+      
+      // Dividir el texto en líneas para que quepa en el PDF
+      const splitText = pdf.splitTextToSize(certificateContent, 170);
+      pdf.text(splitText, 20, 110);
+      
+      // Calcular la posición Y después del contenido
+      const contentHeight = splitText.length * 7;
+      let currentY = 110 + contentHeight + 30;
+      
+      // Firmantes (si existen)
+      if (companyConfig?.signatories && companyConfig.signatories.length > 0) {
+        const signatureSpacing = 170 / companyConfig.signatories.length;
+        
+        companyConfig.signatories.forEach((signatory, index) => {
+          const xPosition = 20 + (signatureSpacing * index) + (signatureSpacing / 2);
+          
+          // Línea de firma
+          pdf.setDrawColor(0, 0, 0);
+          pdf.setLineWidth(0.5);
+          pdf.line(xPosition - 30, currentY, xPosition + 30, currentY);
+          
+          // Nombre del firmante
+          pdf.setFontSize(10);
+          const nameWidth = pdf.getTextWidth(signatory.name);
+          pdf.text(signatory.name, xPosition - (nameWidth / 2), currentY + 7);
+          
+          // Cargo del firmante
+          pdf.setFontSize(8);
+          const positionWidth = pdf.getTextWidth(signatory.position);
+          pdf.text(signatory.position, xPosition - (positionWidth / 2), currentY + 14);
+        });
+        
+        currentY += 40;
+      }
+      
+      // Pie de página
+      pdf.setFontSize(9);
+      pdf.setTextColor(100, 100, 100);
+      
+      const footerText1 = 'Este certificado es válido con firma digital y código de verificación';
+      const footerWidth1 = pdf.getTextWidth(footerText1);
+      pdf.text(footerText1, (pageWidth - footerWidth1) / 2, currentY);
+      
+      const codeText = `Código: ${verificationCode}`;
+      const codeWidth = pdf.getTextWidth(codeText);
+      pdf.text(codeText, (pageWidth - codeWidth) / 2, currentY + 10);
+      
+      // Texto de pie personalizado (si existe)
+      if (companyConfig?.footerText) {
+        pdf.setFontSize(8);
+        const footerLines = pdf.splitTextToSize(companyConfig.footerText, 170);
+        pdf.text(footerLines, 20, currentY + 25);
+      }
+      
+      // Guardar el PDF
+      const fileName = `certificado_laboral_${employeeData.numero_documento}_${Date.now()}.pdf`;
+      pdf.save(fileName);
 
       toast({
         title: "¡Descarga completada!",
-        description: "Tu certificado se ha descargado correctamente"
+        description: "Tu certificado PDF se ha descargado correctamente"
       });
     } catch (error) {
-      console.error('Error al descargar el certificado:', error);
+      console.error('Error al generar el PDF:', error);
       toast({
         title: "Error en la descarga",
-        description: "Hubo un problema al descargar el certificado. Intenta nuevamente.",
+        description: "Hubo un problema al generar el PDF. Intenta nuevamente.",
         variant: "destructive"
       });
     }
-  };
-
-  const generateCertificateHTML = () => {
-    const certificateContent = getCertificateContent();
-    const currentDate = new Date().toLocaleDateString('es-ES');
-
-    // Usar configuración personalizada si existe, sino usar valores por defecto
-    const companyName = companyConfig?.companyName || employeeData.empresa.toUpperCase();
-    const nit = companyConfig?.nit || 'NIT: 900.123.456-7';
-    const city = companyConfig?.city || 'Bogotá, Colombia';
-    const logoUrl = companyConfig?.logoUrl;
-    const headerColor = companyConfig?.headerColor || '#22c55e';
-    const signatories = companyConfig?.signatories || [];
-    const footerText = companyConfig?.footerText;
-
-    return `
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Certificado Laboral - ${employeeData.nombre}</title>
-    <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 40px 20px;
-            line-height: 1.6;
-            background: #f8f9fa;
-        }
-        .certificate {
-            background: white;
-            padding: 60px;
-            border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            position: relative;
-            overflow: hidden;
-        }
-        .watermark {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) rotate(-45deg);
-            opacity: 0.05;
-            z-index: 1;
-            pointer-events: none;
-        }
-        .watermark img {
-            max-width: 800px;
-            max-height: 800px;
-            width: auto;
-            height: auto;
-        }
-        .certificate-content {
-            position: relative;
-            z-index: 2;
-        }
-        .header {
-            position: relative;
-            border-bottom: 3px solid ${headerColor};
-            padding-bottom: 30px;
-            margin-bottom: 40px;
-        }
-        .logo {
-            position: absolute;
-            top: 0;
-            right: 0;
-            max-height: 60px;
-            width: auto;
-        }
-        .company-info {
-            max-width: 60%;
-        }
-        .company-name {
-            font-size: 32px;
-            font-weight: bold;
-            color: ${headerColor};
-            margin-bottom: 10px;
-        }
-        .certificate-title {
-            font-size: 28px;
-            font-weight: bold;
-            color: #1f2937;
-            margin: 30px 0;
-            text-align: center;
-        }
-        .content {
-            font-size: 16px;
-            color: #374151;
-            text-align: justify;
-            margin: 30px 0;
-            line-height: 1.8;
-        }
-        .signatures {
-            margin-top: 80px;
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 40px;
-        }
-        .signature-block {
-            text-align: center;
-            margin: 20px;
-            min-width: 200px;
-        }
-        .signature-line {
-            border-top: 2px solid #333;
-            margin-bottom: 10px;
-            width: 250px;
-        }
-        .signature-image {
-            max-height: 60px;
-            width: auto;
-            margin-bottom: 10px;
-        }
-        .signature-name {
-            font-weight: bold;
-            font-size: 14px;
-        }
-        .signature-position {
-            font-size: 12px;
-            color: #666;
-        }
-        .footer {
-            text-align: center;
-            margin-top: 50px;
-            padding-top: 30px;
-            border-top: 2px solid #e5e7eb;
-            font-size: 14px;
-            color: #6b7280;
-        }
-        .verification-code {
-            font-family: monospace;
-            font-size: 12px;
-            background: #f3f4f6;
-            padding: 5px 10px;
-            border-radius: 4px;
-            margin-top: 10px;
-        }
-        @media print {
-            body { background: white; }
-            .certificate { box-shadow: none; }
-        }
-    </style>
-</head>
-<body>
-    <div class="certificate">
-        ${logoUrl ? `
-        <div class="watermark">
-            <img src="${logoUrl}" alt="Watermark" />
-        </div>
-        ` : ''}
-        
-        <div class="certificate-content">
-            <div class="header">
-                ${logoUrl ? `<img src="${logoUrl}" alt="Logo" class="logo" />` : ''}
-                <div class="company-info">
-                    <div class="company-name">${companyName}</div>
-                    <div style="color: #6b7280;">${nit}</div>
-                    <div style="color: #6b7280;">${city}</div>
-                </div>
-            </div>
-
-            <div style="text-align: center;">
-                <h1 class="certificate-title">CERTIFICACIÓN LABORAL</h1>
-                <div style="color: #6b7280; margin-bottom: 60px;">
-                    Fecha de expedición: ${currentDate}
-                </div>
-            </div>
-
-            <div class="content">
-                ${certificateContent}
-            </div>
-
-            ${signatories.length > 0 ? `
-            <div class="signatures">
-                ${signatories.map(signatory => `
-                    <div class="signature-block">
-                        ${signatory.signature ? 
-                          `<img src="${signatory.signature}" alt="Firma" class="signature-image" />` : 
-                          '<div class="signature-line"></div>'
-                        }
-                        <div class="signature-name">${signatory.name}</div>
-                        <div class="signature-position">${signatory.position}</div>
-                    </div>
-                `).join('')}
-            </div>
-            ` : ''}
-            
-            <div class="footer">
-                <p>Este certificado es válido con firma digital y código de verificación</p>
-                <div class="verification-code">Código: ${verificationCode}</div>
-                ${footerText ? `<div style="margin-top: 20px; font-size: 12px; white-space: pre-line;">${footerText}</div>` : ''}
-            </div>
-        </div>
-    </div>
-</body>
-</html>`;
   };
 
   const getCertificateContent = () => {
