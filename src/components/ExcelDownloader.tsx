@@ -41,7 +41,9 @@ const ExcelDownloader: React.FC = () => {
         'Fecha Ingreso': emp.fecha_ingreso,
         'Fecha Retiro': emp.fecha_retiro || '',
         'Estado': emp.estado,
-        'Sueldo': emp.sueldo || ''
+        'Sueldo': emp.sueldo || '',
+        'Promedio Salarial Mensual': emp.promedio_salarial_mensual || '',
+        'Promedio No Salarial Mensual': emp.promedio_no_salarial_mensual || ''
       })) || [];
 
       const wb = XLSX.utils.book_new();
@@ -51,7 +53,7 @@ const ExcelDownloader: React.FC = () => {
       const colWidths = [
         { wch: 25 }, { wch: 15 }, { wch: 12 }, { wch: 30 }, 
         { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 12 }, 
-        { wch: 12 }, { wch: 10 }, { wch: 12 }
+        { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 20 }, { wch: 22 }
       ];
       ws['!cols'] = colWidths;
 
@@ -69,7 +71,9 @@ const ExcelDownloader: React.FC = () => {
           'Fecha Ingreso': '',
           'Fecha Retiro': '',
           'Estado': 'Activo',
-          'Sueldo': ''
+          'Sueldo': '',
+          'Promedio Salarial Mensual': '',
+          'Promedio No Salarial Mensual': ''
         }
       ];
 
