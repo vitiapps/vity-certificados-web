@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -182,6 +183,32 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
       // Configurar fuente
       pdf.setFont('helvetica');
       
+      // Agregar marca de agua de fondo si existe logo
+      if (companyConfig?.logoUrl) {
+        try {
+          const logoBase64 = await loadImageAsBase64(companyConfig.logoUrl);
+          if (logoBase64) {
+            // Agregar marca de agua centrada, rotada y con opacidad muy baja
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            
+            // Guardar el estado actual
+            pdf.saveGraphicsState();
+            
+            // Establecer opacidad muy baja para la marca de agua
+            pdf.setGState(pdf.GState({ opacity: 0.08 }));
+            
+            // Centrar y rotar la imagen
+            pdf.addImage(logoBase64, 'PNG', pageWidth/2 - 40, pageHeight/2 - 40, 80, 80);
+            
+            // Restaurar el estado
+            pdf.restoreGraphicsState();
+          }
+        } catch (error) {
+          console.error('Error adding watermark:', error);
+        }
+      }
+      
       // Encabezado de la empresa
       const companyName = companyConfig?.companyName || employeeData.empresa.toUpperCase();
       const nit = companyConfig?.nit || 'NIT: 900.123.456-7';
@@ -189,7 +216,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
       
       let currentY = 30;
       
-      // Cargar y agregar logo si existe
+      // Cargar y agregar logo si existe (en la esquina superior derecha)
       if (companyConfig?.logoUrl) {
         try {
           const logoBase64 = await loadImageAsBase64(companyConfig.logoUrl);
@@ -239,13 +266,38 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
       
       currentY += 25;
       
-      // Contenido del certificado
+      // Contenido del certificado con texto justificado
       pdf.setFontSize(12);
       const certificateContent = getCertificateContent();
       
-      // Dividir el texto en líneas para que quepa en el PDF
+      // Dividir el texto en líneas para justificación
       const splitText = pdf.splitTextToSize(certificateContent, 170);
-      pdf.text(splitText, 20, currentY);
+      
+      // Configurar texto justificado
+      splitText.forEach((line: string, index: number) => {
+        if (index === splitText.length - 1) {
+          // La última línea no se justifica, solo se alinea a la izquierda
+          pdf.text(line, 20, currentY + (index * 7));
+        } else {
+          // Justificar líneas intermedias
+          const words = line.split(' ');
+          if (words.length > 1) {
+            const lineWidth = 170;
+            const textWidth = pdf.getTextWidth(line);
+            const spaceWidth = (lineWidth - textWidth) / (words.length - 1);
+            
+            let xPosition = 20;
+            words.forEach((word: string, wordIndex: number) => {
+              pdf.text(word, xPosition, currentY + (index * 7));
+              if (wordIndex < words.length - 1) {
+                xPosition += pdf.getTextWidth(word) + pdf.getTextWidth(' ') + spaceWidth;
+              }
+            });
+          } else {
+            pdf.text(line, 20, currentY + (index * 7));
+          }
+        }
+      });
       
       // Calcular la posición Y después del contenido
       const contentHeight = splitText.length * 7;
@@ -324,7 +376,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
 
       toast({
         title: "¡Descarga completada!",
-        description: "Tu certificado PDF se ha descargado correctamente con logo y firmas"
+        description: "Tu certificado PDF se ha descargado correctamente con texto justificado y marca de agua"
       });
     } catch (error) {
       console.error('Error al generar el PDF:', error);
