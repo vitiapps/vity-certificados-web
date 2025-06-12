@@ -1,12 +1,14 @@
+
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Edit, UserPlus } from 'lucide-react';
+import { Table, TableBody } from '@/components/ui/table';
 import EditEmployeeDialog from './EditEmployeeDialog';
 import CreateEmployeeDialog from './CreateEmployeeDialog';
+import EmployeeTableRow from './EmployeeTableRow';
+import EmployeeSearchBar from './EmployeeSearchBar';
+import EmployeeTableHeader from './EmployeeTableHeader';
+import EmployeeActions from './EmployeeActions';
 
 interface Employee {
   id: string;
@@ -140,46 +142,18 @@ const EmployeeList: React.FC = () => {
     fetchEmployees();
   };
 
-  const formatCurrency = (amount: number | null): string => {
-    if (amount === null) return 'N/A';
-    return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
-      minimumFractionDigits: 0
-    }).format(amount);
-  };
-
-  const formatDate = (dateString: string | null): string => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('es-CO');
-  };
-
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h3 className="text-lg md:text-xl font-semibold text-gray-800">
-          Lista de Empleados ({filteredEmployees.length})
-        </h3>
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Button 
-            onClick={handleCreateEmployee}
-            className="bg-vity-green hover:bg-vity-green-dark text-white flex items-center gap-2"
-            size="sm"
-          >
-            <UserPlus size={16} />
-            Crear Empleado
-          </Button>
-          <Button onClick={fetchEmployees} disabled={isLoading} size="sm">
-            {isLoading ? 'Cargando...' : 'Actualizar'}
-          </Button>
-        </div>
-      </div>
+      <EmployeeActions
+        employeeCount={filteredEmployees.length}
+        onCreateEmployee={handleCreateEmployee}
+        onRefresh={fetchEmployees}
+        isLoading={isLoading}
+      />
 
-      <Input
-        placeholder="Buscar por nombre, documento, correo o cargo..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        className="w-full md:max-w-md"
+      <EmployeeSearchBar
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
       />
 
       {isLoading ? (
@@ -189,71 +163,15 @@ const EmployeeList: React.FC = () => {
       ) : (
         <div className="overflow-x-auto">
           <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="min-w-[120px]">Nombre</TableHead>
-                <TableHead className="hidden sm:table-cell">Tipo Doc.</TableHead>
-                <TableHead>Documento</TableHead>
-                <TableHead className="hidden md:table-cell">Correo</TableHead>
-                <TableHead className="hidden lg:table-cell">Cargo</TableHead>
-                <TableHead className="hidden lg:table-cell">Empresa</TableHead>
-                <TableHead className="hidden xl:table-cell">Tipo Contrato</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead className="hidden md:table-cell">Fecha Ingreso</TableHead>
-                <TableHead className="hidden xl:table-cell">Fecha Retiro</TableHead>
-                <TableHead className="hidden lg:table-cell">Sueldo</TableHead>
-                <TableHead className="hidden xl:table-cell">Prom. Salarial</TableHead>
-                <TableHead className="hidden xl:table-cell">Prom. No Salarial</TableHead>
-                <TableHead>Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
+            <EmployeeTableHeader />
             <TableBody>
               {filteredEmployees.map((employee) => (
-                <TableRow key={employee.id}>
-                  <TableCell className="font-medium min-w-[120px]">{employee.nombre}</TableCell>
-                  <TableCell className="hidden sm:table-cell">{employee.tipo_documento}</TableCell>
-                  <TableCell>{employee.numero_documento}</TableCell>
-                  <TableCell className="hidden md:table-cell">{employee.correo}</TableCell>
-                  <TableCell className="hidden lg:table-cell">{employee.cargo}</TableCell>
-                  <TableCell className="hidden lg:table-cell">{employee.empresa}</TableCell>
-                  <TableCell className="hidden xl:table-cell">{employee.tipo_contrato}</TableCell>
-                  <TableCell>
-                    <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                      employee.estado.toUpperCase() === 'ACTIVO' 
-                        ? 'bg-green-100 text-green-700' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {employee.estado}
-                    </span>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">{formatDate(employee.fecha_ingreso)}</TableCell>
-                  <TableCell className="hidden xl:table-cell">{formatDate(employee.fecha_retiro)}</TableCell>
-                  <TableCell className="hidden lg:table-cell">{formatCurrency(employee.sueldo)}</TableCell>
-                  <TableCell className="hidden xl:table-cell">{formatCurrency(employee.promedio_salarial_mensual)}</TableCell>
-                  <TableCell className="hidden xl:table-cell">{formatCurrency(employee.promedio_no_salarial_mensual)}</TableCell>
-                  <TableCell>
-                    <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditEmployee(employee)}
-                        className="flex items-center gap-1 text-xs"
-                      >
-                        <Edit size={12} />
-                        <span className="hidden sm:inline">Editar</span>
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => deleteEmployee(employee.id)}
-                        className="text-xs"
-                      >
-                        <span className="hidden sm:inline">Eliminar</span>
-                        <span className="sm:hidden">×</span>
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
+                <EmployeeTableRow
+                  key={employee.id}
+                  employee={employee}
+                  onEdit={handleEditEmployee}
+                  onDelete={deleteEmployee}
+                />
               ))}
             </TableBody>
           </Table>
