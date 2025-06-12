@@ -19,6 +19,8 @@ interface EmployeeFormData {
   fecha_ingreso: string;
   fecha_retiro?: string;
   sueldo?: number;
+  promedio_salarial_mensual?: number;
+  promedio_no_salarial_mensual?: number;
 }
 
 interface EmployeeDataManagerProps {
@@ -41,7 +43,9 @@ const EmployeeDataManager: React.FC<EmployeeDataManagerProps> = ({ onEmployeeCre
       estado: 'Activo',
       fecha_ingreso: '',
       fecha_retiro: '',
-      sueldo: 0
+      sueldo: 0,
+      promedio_salarial_mensual: 0,
+      promedio_no_salarial_mensual: 0
     }
   });
 
@@ -61,7 +65,9 @@ const EmployeeDataManager: React.FC<EmployeeDataManagerProps> = ({ onEmployeeCre
         estado: data.estado,
         fecha_ingreso: data.fecha_ingreso,
         fecha_retiro: data.fecha_retiro || null,
-        sueldo: data.sueldo || null
+        sueldo: data.sueldo || null,
+        promedio_salarial_mensual: data.promedio_salarial_mensual || null,
+        promedio_no_salarial_mensual: data.promedio_no_salarial_mensual || null
       };
 
       const { error } = await supabase
@@ -272,6 +278,44 @@ const EmployeeDataManager: React.FC<EmployeeDataManagerProps> = ({ onEmployeeCre
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Sueldo (opcional)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      placeholder="0" 
+                      {...field}
+                      onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : 0)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="promedio_salarial_mensual"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Promedio Salarial Mensual (opcional)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      placeholder="0" 
+                      {...field}
+                      onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : 0)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="promedio_no_salarial_mensual"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Promedio No Salarial Mensual (opcional)</FormLabel>
                   <FormControl>
                     <Input 
                       type="number" 
