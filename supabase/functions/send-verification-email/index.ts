@@ -3,8 +3,6 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 
-const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -24,6 +22,24 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    
+    if (!resendApiKey) {
+      console.error('RESEND_API_KEY not found in environment variables');
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'RESEND_API_KEY not configured',
+        message: 'API key de Resend no configurada en el servidor' 
+      }), {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders,
+        },
+      });
+    }
+
+    const resend = new Resend(resendApiKey);
     const { employeeName, employeeEmail, verificationCode, companyName }: VerificationEmailRequest = await req.json();
 
     console.log(`Sending verification email to ${employeeEmail} for ${employeeName}`);
