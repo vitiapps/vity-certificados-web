@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -66,8 +65,67 @@ const ExcelUploader: React.FC = () => {
     }));
   };
 
+  // Función para convertir números seriales de Excel a fechas
+  const excelSerialToDate = (serial: number): string | null => {
+    try {
+      // Excel cuenta los días desde 1900-01-01, pero tiene un bug donde considera 1900 como año bisiesto
+      const excelEpoch = new Date(1900, 0, 1);
+      const msPerDay = 24 * 60 * 60 * 1000;
+      
+      // Ajustar por el bug de Excel (día 60 = 29/02/1900 que no existe)
+      const adjustedSerial = serial > 59 ? serial - 1 : serial;
+      
+      const date = new Date(excelEpoch.getTime() + (adjustedSerial - 1) * msPerDay);
+      
+      if (isNaN(date.getTime())) {
+        return null;
+      }
+      
+      return date.toISOString().split('T')[0];
+    } catch (error) {
+      console.error('Error converting Excel serial to date:', error);
+      return null;
+    }
+  };
+
+  // Función para normalizar fechas desde Excel
+  const normalizeDateFromExcel = (dateValue: any): string | null => {
+    if (!dateValue) return null;
+    
+    console.log('Processing date value:', dateValue, 'Type:', typeof dateValue);
+    
+    // Si es un número (serial de Excel)
+    if (typeof dateValue === 'number') {
+      return excelSerialToDate(dateValue);
+    }
+    
+    // Si es string, intentar parsearlo
+    if (typeof dateValue === 'string') {
+      const trimmed = dateValue.trim();
+      if (trimmed === '') return null;
+      
+      // Intentar diferentes formatos de fecha
+      const date = new Date(trimmed);
+      if (!isNaN(date.getTime())) {
+        return date.toISOString().split('T')[0];
+      }
+    }
+    
+    // Si es objeto Date
+    if (dateValue instanceof Date) {
+      if (!isNaN(dateValue.getTime())) {
+        return dateValue.toISOString().split('T')[0];
+      }
+    }
+    
+    console.warn('Unable to parse date value:', dateValue);
+    return null;
+  };
+
   const validateRecord = (record: any, rowIndex: number): ValidationError[] => {
     const errors: ValidationError[] = [];
+    
+    console.log(`Validating record ${rowIndex}:`, record);
     
     // Validaciones obligatorias
     if (!record.nombre || record.nombre.toString().trim() === '') {
@@ -145,16 +203,30 @@ const ExcelUploader: React.FC = () => {
       });
     }
 
-    // Validar fecha de ingreso
+    // Validar fecha de ingreso con mejor manejo
     if (record.fecha_ingreso) {
-      const fechaIngreso = new Date(record.fecha_ingreso);
-      if (isNaN(fechaIngreso.getTime())) {
+      const normalizedDate = normalizeDateFromExcel(record.fecha_ingreso);
+      if (!normalizedDate) {
         errors.push({
           row: rowIndex,
           field: 'fecha_ingreso',
           value: record.fecha_ingreso,
-          error: 'Formato de fecha de ingreso inválido',
+          error: `Formato de fecha de ingreso inválido. Valor recibido: ${record.fecha_ingreso}`,
           type: 'error'
+        });
+      }
+    }
+
+    // Validar fecha de retiro con mejor manejo
+    if (record.fecha_retiro) {
+      const normalizedDate = normalizeDateFromExcel(record.fecha_retiro);
+      if (!normalizedDate) {
+        errors.push({
+          row: rowIndex,
+          field: 'fecha_retiro',
+          value: record.fecha_retiro,
+          error: `Formato de fecha de retiro inválido. Valor recibido: ${record.fecha_retiro}`,
+          type: 'warning'
         });
       }
     }
@@ -213,10 +285,15 @@ const ExcelUploader: React.FC = () => {
       reader.onload = e => {
         try {
           const data = new Uint8Array(e.target?.result as ArrayBuffer);
-          const workbook = XLSX.read(data, { type: 'array' });
+          const workbook = XLSX.read(data, { type: 'array', cellDates: true });
           const sheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[sheetName];
-          const jsonData = XLSX.utils.sheet_to_json(worksheet);
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+            raw: false,
+            dateNF: 'yyyy-mm-dd'
+          });
+          
+          console.log('Processed Excel data:', jsonData);
           resolve(jsonData);
         } catch (error) {
           reject(error);
@@ -302,21 +379,36 @@ const ExcelUploader: React.FC = () => {
 
       for (let i = 0; i < validData.length; i += batchSize) {
         const batch = validData.slice(i, i + batchSize);
-        const formattedBatch = batch.map(row => ({
-          nombre: row.nombre?.toString().trim() || '',
-          numero_documento: row.numero_documento?.toString().trim() || '',
-          tipo_documento: row.tipo_documento?.toString().trim() || 'CC',
-          correo: row.correo?.toString().trim() || '',
-          cargo: row.cargo?.toString().trim() || '',
-          empresa: row.empresa?.toString().trim() || '',
-          tipo_contrato: row.tipo_contrato?.toString().trim() || '',
-          estado: row.estado?.toString().trim() || 'Activo',
-          fecha_ingreso: row.fecha_ingreso || new Date().toISOString().split('T')[0],
-          fecha_retiro: row.fecha_retiro || null,
-          sueldo: row.sueldo ? parseFloat(row.sueldo.toString()) : null
-        }));
+        const formattedBatch = batch.map(row => {
+          const fechaIngreso = normalizeDateFromExcel(row.fecha_ingreso) || new Date().toISOString().split('T')[0];
+          const fechaRetiro = row.fecha_retiro ? normalizeDateFromExcel(row.fecha_retiro) : null;
+          
+          console.log(`Processing batch record:`, {
+            nombre: row.nombre,
+            fecha_ingreso_original: row.fecha_ingreso,
+            fecha_ingreso_processed: fechaIngreso,
+            fecha_retiro_original: row.fecha_retiro,
+            fecha_retiro_processed: fechaRetiro
+          });
+          
+          return {
+            nombre: row.nombre?.toString().trim() || '',
+            numero_documento: row.numero_documento?.toString().trim() || '',
+            tipo_documento: row.tipo_documento?.toString().trim() || 'CC',
+            correo: row.correo?.toString().trim() || '',
+            cargo: row.cargo?.toString().trim() || '',
+            empresa: row.empresa?.toString().trim() || '',
+            tipo_contrato: row.tipo_contrato?.toString().trim() || '',
+            estado: row.estado?.toString().trim() || 'Activo',
+            fecha_ingreso: fechaIngreso,
+            fecha_retiro: fechaRetiro,
+            sueldo: row.sueldo ? parseFloat(row.sueldo.toString()) : null
+          };
+        });
 
         updateProgress(50 + (processedBatches / totalBatches) * 40, `Insertando lote ${processedBatches + 1} de ${totalBatches}...`);
+
+        console.log('Inserting batch:', formattedBatch);
 
         const { error } = await supabase
           .from('empleados')
@@ -326,6 +418,7 @@ const ExcelUploader: React.FC = () => {
           });
 
         if (error) {
+          console.error('Supabase error:', error);
           throw error;
         }
 
@@ -553,9 +646,9 @@ const ExcelUploader: React.FC = () => {
               • <strong>cargo</strong> - Ejemplo: Desarrollador<br />
               • <strong>empresa</strong> - Ejemplo: Vity SAS<br />
               • <strong>tipo_contrato</strong> - Ejemplo: Indefinido, Fijo<br />
-              • <strong>fecha_ingreso</strong> - Formato: YYYY-MM-DD (ej: 2024-01-15)<br />
+              • <strong>fecha_ingreso</strong> - Formato: YYYY-MM-DD (ej: 2024-01-15) o fecha de Excel<br />
               • <strong>estado</strong> - Ejemplo: Activo, Inactivo<br />
-              • <strong>fecha_retiro</strong> - Formato: YYYY-MM-DD (opcional, puede estar vacía)<br />
+              • <strong>fecha_retiro</strong> - Formato: YYYY-MM-DD (opcional, puede estar vacía) o fecha de Excel<br />
               • <strong>sueldo</strong> - Ejemplo: 3500000 (numérico sin puntos ni comas)
             </p>
           </div>
