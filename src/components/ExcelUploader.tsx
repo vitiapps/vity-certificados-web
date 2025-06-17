@@ -402,7 +402,9 @@ const ExcelUploader: React.FC = () => {
             estado: row.estado?.toString().trim() || 'Activo',
             fecha_ingreso: fechaIngreso,
             fecha_retiro: fechaRetiro,
-            sueldo: row.sueldo ? parseFloat(row.sueldo.toString()) : null
+            sueldo: row.sueldo ? parseFloat(row.sueldo.toString()) : null,
+            promedio_salarial_mensual: row.promedio_salarial_mensual ? parseFloat(row.promedio_salarial_mensual.toString()) : null,
+            promedio_no_salarial_mensual: row.promedio_no_salarial_mensual ? parseFloat(row.promedio_no_salarial_mensual.toString()) : null
           };
         });
 
@@ -649,7 +651,9 @@ const ExcelUploader: React.FC = () => {
               • <strong>fecha_ingreso</strong> - Formato: YYYY-MM-DD (ej: 2024-01-15) o fecha de Excel<br />
               • <strong>estado</strong> - Ejemplo: Activo, Inactivo<br />
               • <strong>fecha_retiro</strong> - Formato: YYYY-MM-DD (opcional, puede estar vacía) o fecha de Excel<br />
-              • <strong>sueldo</strong> - Ejemplo: 3500000 (numérico sin puntos ni comas)
+              • <strong>sueldo</strong> - Ejemplo: 3500000 (numérico sin puntos ni comas)<br />
+              • <strong>promedio_salarial_mensual</strong> - Ejemplo: 3200000 (numérico, opcional)<br />
+              • <strong>promedio_no_salarial_mensual</strong> - Ejemplo: 500000 (numérico, opcional)
             </p>
           </div>
         </CardContent>
