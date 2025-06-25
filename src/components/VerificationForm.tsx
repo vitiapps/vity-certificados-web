@@ -23,6 +23,8 @@ const VerificationForm: React.FC<VerificationFormProps> = ({
   const [generatedCode, setGeneratedCode] = useState('');
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [showCodeFallback, setShowCodeFallback] = useState(false);
+  const [fallbackMessage, setFallbackMessage] = useState('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -35,6 +37,7 @@ const VerificationForm: React.FC<VerificationFormProps> = ({
 
   const sendVerificationEmail = async () => {
     setIsSendingEmail(true);
+    setShowCodeFallback(false);
     const newCode = generateVerificationCode();
     setGeneratedCode(newCode);
     
@@ -54,24 +57,47 @@ const VerificationForm: React.FC<VerificationFormProps> = ({
         throw error;
       }
 
+      console.log('Respuesta del servidor:', data);
+
       if (data?.success) {
         setEmailSent(true);
         toast({
           title: "📧 Email enviado",
           description: `Se ha enviado el código de verificación a ${employeeData.correo}`,
         });
+      } else if (data?.showCodeFallback) {
+        // El servidor indica que hay que mostrar el código como fallback
+        setShowCodeFallback(true);
+        setEmailSent(false);
+        const message = data?.message || 'No se pudo enviar el email';
+        setFallbackMessage(message);
+        
+        toast({
+          title: "⚠️ Error al enviar email",
+          description: message + " Código visible en pantalla.",
+          variant: "destructive"
+        });
+        
+        // Si el servidor devuelve el código, usarlo
+        if (data?.verificationCode) {
+          setGeneratedCode(data.verificationCode);
+        }
       } else {
         throw new Error(data?.message || 'Error al enviar el email');
       }
     } catch (error) {
       console.error('Error sending verification email:', error);
+      setShowCodeFallback(true);
+      setEmailSent(false);
+      setFallbackMessage('Error de conexión al servicio de email');
+      
       toast({
-        title: "Error al enviar email",
-        description: "No se pudo enviar el código. El código aparece en pantalla para pruebas.",
+        title: "⚠️ Error al enviar email",
+        description: "No se pudo enviar el código. El código aparece en pantalla para continuar.",
         variant: "destructive"
       });
       
-      // Mostrar código en consola como fallback
+      // Mostrar código en consola como fallback adicional
       console.log(`Código de verificación (fallback): ${newCode}`);
     } finally {
       setIsSendingEmail(false);
@@ -137,9 +163,14 @@ const VerificationForm: React.FC<VerificationFormProps> = ({
               Se ha enviado un código de 6 dígitos a:<br />
               <span className="font-medium">{employeeData.correo}</span>
             </p>
+          ) : showCodeFallback ? (
+            <div className="text-sm text-orange-600">
+              <p className="font-medium">{fallbackMessage}</p>
+              <p>El código aparece abajo para que puedas continuar.</p>
+            </div>
           ) : (
             <p className="text-sm text-orange-600">
-              Error al enviar email. Revisa la consola del navegador para el código.
+              Error al enviar email. El código aparece abajo.
             </p>
           )}
         </CardHeader>
@@ -194,19 +225,27 @@ const VerificationForm: React.FC<VerificationFormProps> = ({
             </div>
           </form>
           
-          {!emailSent && (
-            <div className="mt-6 p-4 bg-yellow-50 rounded-lg">
-              <p className="text-sm text-yellow-800 font-medium mb-2">
-                💡 Para probar la aplicación (si el email falla):
+          {(showCodeFallback || !emailSent) && generatedCode && (
+            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800 font-medium mb-2">
+                🔢 Código de verificación:
               </p>
-              <div className="space-y-1">
-                <p className="text-xs text-yellow-700">
-                  Código de verificación: <span className="font-mono font-bold text-lg text-yellow-900">{generatedCode}</span>
-                </p>
-                <p className="text-xs text-yellow-600">
-                  También aparece en la consola del navegador
+              <div className="text-center">
+                <p className="font-mono font-bold text-2xl text-blue-900 bg-white px-4 py-2 rounded border tracking-widest">
+                  {generatedCode}
                 </p>
               </div>
+              <p className="text-xs text-blue-600 mt-2 text-center">
+                Copia este código en el campo de arriba para continuar
+              </p>
+            </div>
+          )}
+          
+          {emailSent && (
+            <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-sm text-green-800">
+                ✅ Email enviado correctamente. Revisa tu bandeja de entrada y spam.
+              </p>
             </div>
           )}
         </CardContent>

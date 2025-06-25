@@ -29,7 +29,8 @@ const handler = async (req: Request): Promise<Response> => {
       return new Response(JSON.stringify({ 
         success: false, 
         error: 'RESEND_API_KEY not configured',
-        message: 'API key de Resend no configurada en el servidor' 
+        message: 'API key de Resend no configurada en el servidor',
+        showCodeFallback: true
       }), {
         status: 500,
         headers: {
@@ -42,7 +43,7 @@ const handler = async (req: Request): Promise<Response> => {
     const resend = new Resend(resendApiKey);
     const { employeeName, employeeEmail, verificationCode, companyName }: VerificationEmailRequest = await req.json();
 
-    console.log(`Sending verification email to ${employeeEmail} for ${employeeName}`);
+    console.log(`Enviando código de verificación: ${verificationCode} a ${employeeEmail} para ${employeeName}`);
 
     const emailResponse = await resend.emails.send({
       from: "Certificados Laborales <onboarding@resend.dev>",
@@ -102,7 +103,44 @@ const handler = async (req: Request): Promise<Response> => {
       `,
     });
 
-    console.log("Verification email sent successfully:", emailResponse);
+    console.log("Respuesta de Resend:", emailResponse);
+
+    // Verificar si hubo error en el envío
+    if (emailResponse.error) {
+      console.error("Error de Resend:", emailResponse.error);
+      
+      // Si es el error de dominio no verificado, devolver respuesta específica
+      if (emailResponse.error.message && emailResponse.error.message.includes('verify a domain')) {
+        return new Response(JSON.stringify({ 
+          success: false,
+          error: 'Domain not verified',
+          message: 'Dominio no verificado en Resend. Mostrando código en pantalla.',
+          showCodeFallback: true,
+          verificationCode: verificationCode
+        }), {
+          status: 200, // Enviamos 200 para que el frontend maneje el fallback
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders,
+          },
+        });
+      }
+      
+      // Otros errores de Resend
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: emailResponse.error.message,
+        message: 'Error al enviar el email',
+        showCodeFallback: true,
+        verificationCode: verificationCode
+      }), {
+        status: 200, // Enviamos 200 para que el frontend maneje el fallback
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders,
+        },
+      });
+    }
 
     return new Response(JSON.stringify({ 
       success: true, 
@@ -116,12 +154,13 @@ const handler = async (req: Request): Promise<Response> => {
       },
     });
   } catch (error: any) {
-    console.error("Error sending verification email:", error);
+    console.error("Error enviando email de verificación:", error);
     return new Response(
       JSON.stringify({ 
         success: false, 
         error: error.message,
-        message: 'Error al enviar el email' 
+        message: 'Error al enviar el email',
+        showCodeFallback: true
       }),
       {
         status: 500,
