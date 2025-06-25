@@ -46,7 +46,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log(`Enviando código de verificación: ${verificationCode} a ${employeeEmail} para ${employeeName}`);
 
     const emailResponse = await resend.emails.send({
-      from: "Certificados Laborales <onboarding@resend.dev>",
+      from: "Certificados Laborales <noreply@certificados.vity.com>",
       to: [employeeEmail],
       subject: `Código de verificación - ${companyName}`,
       html: `
