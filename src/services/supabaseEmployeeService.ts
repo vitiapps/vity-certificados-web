@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 interface EmployeeData {
@@ -31,6 +32,8 @@ interface CertificationHistory {
 class SupabaseEmployeeService {
   async findEmployeeByDocument(numeroDocumento: string): Promise<EmployeeData | null> {
     try {
+      console.log('Buscando empleado con documento:', numeroDocumento);
+      
       const { data, error } = await supabase
         .from('empleados')
         .select('*')
@@ -38,6 +41,7 @@ class SupabaseEmployeeService {
         .single();
 
       if (error) {
+        console.error('Error en consulta de empleado:', error);
         if (error.code === 'PGRST116') {
           // No se encontró el empleado
           return null;
@@ -45,6 +49,7 @@ class SupabaseEmployeeService {
         throw error;
       }
 
+      console.log('Empleado encontrado:', data);
       return {
         id: data.id,
         tipo_documento: data.tipo_documento,
@@ -69,6 +74,8 @@ class SupabaseEmployeeService {
 
   async saveCertificationHistory(certification: Omit<CertificationHistory, 'id'>): Promise<boolean> {
     try {
+      console.log('Guardando historial de certificación:', certification);
+      
       const { error } = await supabase
         .from('certificaciones_historico')
         .insert([{
@@ -86,6 +93,7 @@ class SupabaseEmployeeService {
         return false;
       }
 
+      console.log('Historial de certificación guardado exitosamente');
       return true;
     } catch (error) {
       console.error('Error saving certification history:', error);
@@ -95,16 +103,97 @@ class SupabaseEmployeeService {
 
   async testConnection(): Promise<boolean> {
     try {
+      console.log('Probando conexión con Supabase...');
+      console.log('URL de Supabase:', supabase.supabaseUrl);
+      console.log('Anon key presente:', !!supabase.supabaseKey);
+      
+      // Intentar una consulta simple
+      const { data, error } = await supabase
+        .from('empleados')
+        .select('id')
+        .limit(1);
+
+      if (error) {
+        console.error('Error en test de conexión:', error);
+        console.error('Código de error:', error.code);
+        console.error('Mensaje de error:', error.message);
+        console.error('Detalles del error:', error.details);
+        return false;
+      }
+
+      console.log('Conexión exitosa. Datos obtenidos:', data);
+      return true;
+    } catch (error) {
+      console.error('Error en test de conexión (catch):', error);
+      
+      // Información adicional de diagnóstico
+      if (error instanceof Error) {
+        console.error('Tipo de error:', error.name);
+        console.error('Mensaje:', error.message);
+        console.error('Stack:', error.stack);
+      }
+      
+      // Verificar conectividad de red básica
+      try {
+        await fetch('https://www.google.com/favicon.ico', { 
+          method: 'HEAD', 
+          mode: 'no-cors',
+          cache: 'no-cache'
+        });
+        console.log('✅ Conectividad de red básica OK');
+      } catch (networkError) {
+        console.error('❌ Sin conectividad de red básica:', networkError);
+      }
+      
+      return false;
+    }
+  }
+
+  async getConnectionDiagnostics(): Promise<{
+    supabaseReachable: boolean;
+    networkConnectivity: boolean;
+    errorDetails: any;
+  }> {
+    const diagnostics = {
+      supabaseReachable: false,
+      networkConnectivity: false,
+      errorDetails: null
+    };
+
+    try {
+      // Test basic network connectivity
+      await fetch('https://www.google.com/favicon.ico', { 
+        method: 'HEAD', 
+        mode: 'no-cors',
+        cache: 'no-cache'
+      });
+      diagnostics.networkConnectivity = true;
+      console.log('✅ Conectividad de red OK');
+    } catch (error) {
+      console.error('❌ Sin conectividad de red:', error);
+      diagnostics.errorDetails = error;
+    }
+
+    try {
+      // Test Supabase connectivity
       const { error } = await supabase
         .from('empleados')
         .select('id')
         .limit(1);
 
-      return !error;
+      if (!error) {
+        diagnostics.supabaseReachable = true;
+        console.log('✅ Supabase alcanzable');
+      } else {
+        console.error('❌ Error de Supabase:', error);
+        diagnostics.errorDetails = error;
+      }
     } catch (error) {
-      console.error('Connection test failed:', error);
-      return false;
+      console.error('❌ No se puede conectar a Supabase:', error);
+      diagnostics.errorDetails = error;
     }
+
+    return diagnostics;
   }
 
   isConfigured(): boolean {
