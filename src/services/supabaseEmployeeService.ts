@@ -104,8 +104,7 @@ class SupabaseEmployeeService {
   async testConnection(): Promise<boolean> {
     try {
       console.log('Probando conexión con Supabase...');
-      console.log('URL de Supabase:', supabase.supabaseUrl);
-      console.log('Anon key presente:', !!supabase.supabaseKey);
+      console.log('Configuración de Supabase inicializada correctamente');
       
       // Intentar una consulta simple
       const { data, error } = await supabase
